@@ -2926,6 +2926,7 @@ body.morespace-collapse::before {
       <button class="dev-debug-btn" type="button" data-dev-action="add-1000">+1.000 impulsi</button>
       <button class="dev-debug-btn" type="button" data-dev-action="add-100000">+100.000 impulsi</button>
       <button class="dev-debug-btn" type="button" data-dev-action="add-10000000">+10.000.000 impulsi</button>
+      <button class="dev-debug-btn" type="button" data-dev-action="trigger-collapse">Trigger Drenaggio</button>
       <button class="dev-debug-btn" type="button" data-dev-action="set-0">Impulsi a 0</button>
       <button class="dev-debug-btn" type="button" data-dev-action="set-1000000">Impulsi a 1.000.000</button>
       <button class="dev-debug-btn" type="button" data-dev-action="unlock-all">Sblocca tutti</button>
@@ -3682,6 +3683,8 @@ let isSfxMuted = false;
 let musicVolume = 0.12;
 let sfxVolume = 1;
 let activeVibranteSounds = [];
+let vibranteHoldSound = null;
+let vibranteFadeInterval = 0;
 let devDebugPanelVisible = false;
 let devBoostEnabled = false;
 let devTimeMultiplier = 1;
@@ -3689,20 +3692,20 @@ let pendingResetConfirmationAction = null;
 
 brainClickSound.volume = Math.min(0.78 * 2, 1);
 agopunturaSound.volume = 0.7;
-diapasonSound.volume = 0.7;
+diapasonSound.volume = 0.7 * 0.9;
 clickHoldSound.volume = 0.48 * 0.5;
-vibranteSound.volume = 0.4 * 0.7;
+vibranteSound.volume = 0.4 * 0.7 * 1.15;
 achievementSound.volume = 0.75 * 0.7;
-const BLUE_POWERUP_VOLUME = 0.7;
+const BLUE_POWERUP_VOLUME = 0.63 * 0.85;
 bluePowerupSound.volume = BLUE_POWERUP_VOLUME;
 crystalPowerupSound.volume = 0.75 * 0.8 * 0.7;
-purplePowerupSound.volume = 0.7;
-greenPowerupSound.volume = 0.7;
-drain2MSound.volume = 0.6;
-drainUpgradeSound.volume = 0.65;
-magicGlowSound.volume = 0.75;
-greenClickSound.volume = 0.85;
-brainStageTwoAppearSound.volume = 0.82;
+purplePowerupSound.volume = 0.7 * 0.8;
+greenPowerupSound.volume = 0.7 * 0.9 * 0.85;
+drain2MSound.volume = 0.6 * 0.75;
+drainUpgradeSound.volume = 0.65 * 0.75;
+magicGlowSound.volume = 0.75 * 0.75;
+greenClickSound.volume = 0.85 * 0.75;
+brainStageTwoAppearSound.volume = 0.82 * 0.75;
 outroSound.volume = 0.9;
 blockedSound.volume = 0.55;
 consoleTypingSound.volume = 0.42;
@@ -6021,6 +6024,20 @@ function handleDevDebugAction(action) {
       addProducedImpulses(10000000);
       statusText.textContent = "DEV: +10.000.000 impulsi.";
       break;
+    case "trigger-collapse":
+      game.moreSpaceEventStarted = true;
+      game.moreSpaceRequestShown = true;
+      game.moreSpaceReadyShown = true;
+
+      game.impulses = 2000000;
+      game.maxImpulses = Math.max(game.maxImpulses || 0, game.impulses);
+
+      statusText.textContent = "DEV: avvio drenaggio forzato.";
+
+      if (game.moreSpaceCollapseStarted) return;
+
+      startMoreSpaceCollapse();
+      break;
     case "set-0":
       game.impulses = 0;
       statusText.textContent = "DEV: impulsi impostati a 0.";
@@ -6408,18 +6425,91 @@ function startVibranteSound() {
 function startVibranteHoldSound() {
   if (isSfxMuted) return;
   if ((game.holdPulsePower || 0) <= 0) return;
-  if (activeVibranteSounds.length > 0) return;
+  
+  if (vibranteFadeInterval) {
+    clearInterval(vibranteFadeInterval);
+    vibranteFadeInterval = 0;
+  }
 
-  playVibranteSound();
+  if (vibranteHoldSound) return;
+
+  const sound = vibranteSound.cloneNode();
+  sound.loop = true;
+  sound._baseVolume = vibranteSound._baseVolume ?? vibranteSound.volume ?? 0.28;
+  sound.volume = 0;
+  sound.muted = isSfxMuted;
+
+  vibranteHoldSound = sound;
+  activeVibranteSounds = [sound];
+
+  sound.currentTime = 0;
+  sound.play().catch(() => {
+    if (vibranteHoldSound === sound) {
+      vibranteHoldSound = null;
+    }
+    activeVibranteSounds = activeVibranteSounds.filter((item) => item !== sound);
+  });
+
+  const targetVolume = vibranteSound.volume;
+  const fadeDuration = 200;
+  const startTime = Date.now();
+
+  const fadeInterval = setInterval(() => {
+    if (vibranteHoldSound !== sound) {
+      clearInterval(fadeInterval);
+      return;
+    }
+
+    const elapsed = Date.now() - startTime;
+    const progress = Math.min(elapsed / fadeDuration, 1);
+
+    sound.volume = targetVolume * progress;
+
+    if (progress >= 1) {
+      clearInterval(fadeInterval);
+    }
+  }, 20);
+}
+
+function fadeOutVibranteHoldSound(durationMs = 350) {
+  if (vibranteFadeInterval) {
+    clearInterval(vibranteFadeInterval);
+    vibranteFadeInterval = 0;
+  }
+
+  const sound = vibranteHoldSound;
+  if (!sound) {
+    activeVibranteSounds = [];
+    return;
+  }
+
+  const startVolume = sound.volume;
+  const startedAt = Date.now();
+
+  vibranteFadeInterval = setInterval(() => {
+    const progress = Math.min((Date.now() - startedAt) / durationMs, 1);
+    sound.volume = startVolume * (1 - progress);
+
+    if (progress >= 1) {
+      clearInterval(vibranteFadeInterval);
+      vibranteFadeInterval = 0;
+
+      try {
+        sound.pause();
+        sound.currentTime = 0;
+      } catch (e) {}
+
+      if (vibranteHoldSound === sound) {
+        vibranteHoldSound = null;
+      }
+
+      activeVibranteSounds = activeVibranteSounds.filter((item) => item !== sound);
+    }
+  }, 30);
 }
 
 function stopVibranteSounds() {
-  for (const sound of activeVibranteSounds) {
-    sound.pause();
-    sound.currentTime = 0;
-  }
-
-  activeVibranteSounds = [];
+  fadeOutVibranteHoldSound(350);
 }
 
 function playAchievementSound() {
@@ -8616,11 +8706,10 @@ function beginBrainPress(pointerId) {
   brainMinCompression = getMinimumCompression(delta);
   brainMaxCompression = getMaximumCompression(delta);
   lastHoldPulseAt = now;
+  startVibranteHoldSound();
 
   clearTimeout(brainHoldTimer);
   stopBrainPressAnimation();
-  stopVibranteSounds();
-  startVibranteHoldSound();
   setBrainCompression(brainMinCompression, 24, "linear");
   setBrainHoldEnergy(0);
 
