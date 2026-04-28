@@ -4167,7 +4167,11 @@ function renderConsoleOutput() {
   for (const entry of history) {
     const node = document.createElement("div");
     node.className = "console-entry";
-    node.textContent = entry;
+    const text = typeof entry === "object"
+      ? String(entry.text ?? "")
+      : String(entry);
+    if (!text) continue;
+    node.textContent = text;
     fragment.appendChild(node);
   }
 
@@ -4202,15 +4206,24 @@ function scrollConsoleToBottom(force = false) {
 }
 
 function pushConsoleLogEntry(message) {
-  if (!message) {
-    return;
-  }
+  if (!message) return;
 
   if (!Array.isArray(game.consoleLog)) {
     game.consoleLog = [];
   }
 
-  game.consoleLog.push(String(message));
+  const text = typeof message === "object"
+    ? String(message.text ?? "")
+    : String(message);
+
+  if (!text) return;
+
+  game.consoleLog.push(text);
+
+  if (game.consoleLog.length > 50) {
+    game.consoleLog.splice(0, game.consoleLog.length - 50);
+    return;
+  }
 }
 
 function isMobileViewport() {
@@ -4375,9 +4388,6 @@ function displayConsoleMessageNow(lines, speed = 42, options = {}) {
 
   for (const entry of entries) {
     pushConsoleLogEntry(entry);
-    if (game.consoleLog.length > 50) {
-      game.consoleLog.splice(0, game.consoleLog.length - 50);
-    }
   }
 
   consoleText.classList.remove("console-fade-out");
