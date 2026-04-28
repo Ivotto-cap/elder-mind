@@ -2062,6 +2062,22 @@ body.morespace-collapse::before {
   display: flex;
   gap: 10px;
   align-items: center;
+  flex-wrap: wrap;
+}
+
+.audio-control-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.audio-control-group label {
+  color: white;
+  font-size: 12px;
+}
+
+.audio-control-group input[type="range"] {
+  width: 110px;
 }
 
 .options-panel {
@@ -2841,9 +2857,16 @@ body.morespace-collapse::before {
     <div class="options-actions">
       <button class="options-btn" id="optionsBtn" type="button">Opzioni</button>
       <button class="options-btn" id="achievementsBtn" type="button">Obiettivi</button>
-      <button class="options-btn" id="muteBtn" type="button">Mute</button>
-      <label for="bgVolume" style="color:white; font-size:12px;">Vol</label>
-      <input id="bgVolume" type="range" min="0" max="0.35" step="0.01" value="0.12">
+      <button class="options-btn" id="muteBtn" type="button">Musica: ON</button>
+      <div class="audio-control-group">
+        <label for="bgVolume">Volume musica</label>
+        <input id="bgVolume" type="range" min="0" max="1" step="0.01" value="0.12">
+      </div>
+      <button class="options-btn" id="sfxMuteBtn" type="button">Suoni: ON</button>
+      <div class="audio-control-group">
+        <label for="sfxVolume">Volume suoni</label>
+        <input id="sfxVolume" type="range" min="0" max="1" step="0.01" value="1">
+      </div>
       <button class="reset-btn" id="resetBtn" type="button">Reset Progressi</button>
     </div>
   </footer>
@@ -3630,7 +3653,9 @@ const resetConfirmCancel = document.getElementById("resetConfirmCancel");
 const resetConfirmAccept = document.getElementById("resetConfirmAccept");
 const backgroundMusic = document.getElementById("bgMusic");
 const muteBtn = document.getElementById("muteBtn");
+const sfxMuteBtn = document.getElementById("sfxMuteBtn");
 const bgSlider = document.getElementById("bgVolume");
+const sfxVolumeSlider = document.getElementById("sfxVolume");
 const brainClickSound = new Audio("assets/audio/click1.mp3");
 const agopunturaSound = new Audio("assets/audio/agopuntura.mp3");
 const diapasonSound = new Audio("assets/audio/diapason.wav");
@@ -3652,7 +3677,10 @@ const consoleTypingSound = new Audio("assets/audio/consoletyping.wav");
 let consoleSoundPlayed = false;
 const consoleStartSound = new Audio("assets/audio/accensioneconsole.wav");
 let musicaPartita = false;
-let isMuted = false;
+let isMusicMuted = false;
+let isSfxMuted = false;
+let musicVolume = 0.12;
+let sfxVolume = 1;
 let activeVibranteSounds = [];
 let devDebugPanelVisible = false;
 let devBoostEnabled = false;
@@ -3679,6 +3707,79 @@ blockedSound.volume = 0.55;
 consoleTypingSound.volume = 0.42;
 consoleTypingSound.loop = true;
 consoleStartSound.volume = 0.7;
+
+const sfxAudioSources = [
+  brainClickSound,
+  agopunturaSound,
+  diapasonSound,
+  clickHoldSound,
+  vibranteSound,
+  achievementSound,
+  bluePowerupSound,
+  crystalPowerupSound,
+  purplePowerupSound,
+  greenPowerupSound,
+  drain2MSound,
+  drainUpgradeSound,
+  magicGlowSound,
+  greenClickSound,
+  brainStageTwoAppearSound,
+  outroSound,
+  blockedSound,
+  consoleTypingSound,
+  consoleStartSound
+].filter(Boolean);
+
+function clampAudioVolume(value, fallback = 1) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(0, Math.min(1, n));
+}
+
+function getMusicVolume() {
+  return clampAudioVolume(musicVolume, 0.12);
+}
+
+function getSfxVolume() {
+  return clampAudioVolume(sfxVolume, 1);
+}
+
+function applySfxSettingsTo(sound, baseVolume = 1) {
+  if (!sound) return;
+  sound.volume = clampAudioVolume(baseVolume * getSfxVolume(), baseVolume);
+  sound.muted = isSfxMuted;
+}
+
+function applyAllSfxSettings() {
+  for (const sound of sfxAudioSources) {
+    const base = Number(sound.dataset?.baseVolume ?? sound._baseVolume ?? sound.volume ?? 1);
+    applySfxSettingsTo(sound, base);
+  }
+
+  if (typeof activeVibranteSounds !== "undefined" && Array.isArray(activeVibranteSounds)) {
+    for (const sound of activeVibranteSounds) {
+      if (sound) sound.muted = isSfxMuted;
+    }
+  }
+
+  if (typeof activeDrain2MSound !== "undefined" && activeDrain2MSound) {
+    activeDrain2MSound.muted = isSfxMuted;
+  }
+}
+
+function updateAudioButtons() {
+  if (muteBtn) {
+    muteBtn.textContent = isMusicMuted ? "Musica: OFF" : "Musica: ON";
+  }
+
+  if (sfxMuteBtn) {
+    sfxMuteBtn.textContent = isSfxMuted ? "Suoni: OFF" : "Suoni: ON";
+  }
+}
+
+for (const sound of sfxAudioSources) {
+  sound._baseVolume = sound.volume;
+}
 
 let saveTimer = null;
 let linkCleanupTimers = [];
@@ -3740,6 +3841,7 @@ let moreSpaceCollapseFrame = 0;
 let moreSpaceRecoveryTriggerTimer = 0;
 let moreSpaceRecoveryFrame = 0;
 let activeDrain2MSound = null;
+applyAllSfxSettings();
 let greenPotentialUnlockTimer = 0;
 let brainGreenTransformationTimer = 0;
 let brainGreenTransformationActive = false;
@@ -3909,7 +4011,8 @@ function inferConsolePhaseFromLegacyFlags(state) {
 
 function playMoreSpacePumpSound() {
   const sound = new Audio("assets/audio/pompaelettromagnetica.wav");
-  sound.volume = 0.75;
+  sound._baseVolume = 0.75;
+  applySfxSettingsTo(sound, sound._baseVolume);
   sound.play().catch(() => {});
 }
 
@@ -6028,7 +6131,8 @@ function prepareIntroMusic() {
 
   introMusic = new Audio("assets/audio/musicaintro.mp3");
   introMusic.loop = true;
-  introMusic.volume = 0.6;
+  introMusic.volume = getMusicVolume();
+  introMusic.muted = isMusicMuted;
   introMusic.preload = "auto";
 }
 
@@ -6075,8 +6179,8 @@ function avviaMusica() {
     return;
   }
 
-  audio.volume = parseFloat(document.getElementById("bgVolume")?.value || 0.12);
-  audio.muted = isMuted;
+  audio.volume = getMusicVolume();
+  audio.muted = isMusicMuted;
 
   if (!audio.paused && !audio.ended && musicaPartita) {
     return;
@@ -6221,21 +6325,33 @@ function triggerFirstContactEvent() {
 
 function setBackgroundVolume(value) {
   if (!backgroundMusic) return;
-  backgroundMusic.volume = value;
+  musicVolume = clampAudioVolume(value, 0.12);
+  backgroundMusic.volume = getMusicVolume();
+  backgroundMusic.muted = isMusicMuted;
+  if (introMusic) {
+    introMusic.volume = getMusicVolume();
+    introMusic.muted = isMusicMuted;
+  }
 }
 
 function playBrainClickSound() {
   const sound = brainClickSound.cloneNode();
+  sound.volume = (brainClickSound._baseVolume ?? brainClickSound.volume) * getSfxVolume();
+  sound.muted = isSfxMuted;
   sound.play().catch(() => {});
 }
 
 function playAgopunturaSound() {
   const sound = agopunturaSound.cloneNode();
+  sound.volume = (agopunturaSound._baseVolume ?? agopunturaSound.volume) * getSfxVolume();
+  sound.muted = isSfxMuted;
   sound.play().catch(() => {});
 }
 
 function playDiapasonSound() {
   const sound = diapasonSound.cloneNode();
+  sound.volume = (diapasonSound._baseVolume ?? diapasonSound.volume) * getSfxVolume();
+  sound.muted = isSfxMuted;
   sound.play().catch(() => {});
 }
 
@@ -6243,7 +6359,8 @@ function playClickHoldSound() {
   stopVibranteSounds();
 
   const sound = clickHoldSound.cloneNode();
-  sound.volume = clickHoldSound.volume;
+  sound.volume = (clickHoldSound._baseVolume ?? clickHoldSound.volume) * getSfxVolume();
+  sound.muted = isSfxMuted;
 
   sound.play().catch((error) => {
     console.warn("Errore click prolungato:", error);
@@ -6252,7 +6369,9 @@ function playClickHoldSound() {
 
 function playVibranteSound() {
   const sound = vibranteSound.cloneNode();
-  sound.volume = vibranteSound.volume;
+  sound._baseVolume = vibranteSound._baseVolume ?? vibranteSound.volume;
+  sound.volume = sound._baseVolume * getSfxVolume();
+  sound.muted = isSfxMuted;
 
   activeVibranteSounds.push(sound);
 
@@ -6276,7 +6395,8 @@ function stopVibranteSounds() {
 
 function playAchievementSound() {
   const sound = achievementSound.cloneNode();
-  sound.volume = achievementSound.volume;
+  sound.volume = (achievementSound._baseVolume ?? achievementSound.volume) * getSfxVolume();
+  sound.muted = isSfxMuted;
 
   sound.play().catch((error) => {
     console.warn("Suono obiettivo non partito:", error);
@@ -6285,7 +6405,8 @@ function playAchievementSound() {
 
 function playCoinSound() {
   const sound = new Audio("assets/audio/coin.wav");
-  sound.volume = 0.6;
+  sound._baseVolume = 0.6;
+  applySfxSettingsTo(sound, sound._baseVolume);
   sound.play().catch(() => {});
 }
 
@@ -6310,25 +6431,29 @@ function stopConsoleTypingSound() {
 
 function playBluePowerupSound() {
   const sound = bluePowerupSound.cloneNode();
-  sound.volume = bluePowerupSound.volume;
+  sound.volume = (bluePowerupSound._baseVolume ?? bluePowerupSound.volume) * getSfxVolume();
+  sound.muted = isSfxMuted;
   sound.play().catch(() => {});
 }
 
 function playCrystalPowerupSound() {
   const sound = crystalPowerupSound.cloneNode();
-  sound.volume = crystalPowerupSound.volume;
+  sound.volume = (crystalPowerupSound._baseVolume ?? crystalPowerupSound.volume) * getSfxVolume();
+  sound.muted = isSfxMuted;
   sound.play().catch(() => {});
 }
 
 function playPurplePowerupSound() {
   const sound = purplePowerupSound.cloneNode();
-  sound.volume = purplePowerupSound.volume;
+  sound.volume = (purplePowerupSound._baseVolume ?? purplePowerupSound.volume) * getSfxVolume();
+  sound.muted = isSfxMuted;
   sound.play().catch(() => {});
 }
 
 function playGreenPowerupSound() {
   const sound = greenPowerupSound.cloneNode();
-  sound.volume = greenPowerupSound.volume;
+  sound.volume = (greenPowerupSound._baseVolume ?? greenPowerupSound.volume) * getSfxVolume();
+  sound.muted = isSfxMuted;
   sound.play().catch(() => {});
 }
 
@@ -6341,8 +6466,9 @@ function playDrain2MSound() {
 
   const sound = drain2MSound.cloneNode();
   sound.loop = true;
-  sound.volume = drain2MSound.volume;
-  sound.muted = isMuted;
+  sound._baseVolume = drain2MSound._baseVolume ?? drain2MSound.volume;
+  sound.volume = sound._baseVolume * getSfxVolume();
+  sound.muted = isSfxMuted;
   sound.play().catch(() => {});
   activeDrain2MSound = sound;
   return sound;
@@ -6360,35 +6486,36 @@ function stopDrain2MSound() {
 
 function playDrainUpgradeSound() {
   const sound = drainUpgradeSound.cloneNode();
-  sound.volume = drainUpgradeSound.volume;
-  sound.muted = isMuted;
+  sound.volume = (drainUpgradeSound._baseVolume ?? drainUpgradeSound.volume) * getSfxVolume();
+  sound.muted = isSfxMuted;
   sound.play().catch(() => {});
 }
 
 function playMagicGlowSound() {
   const sound = magicGlowSound.cloneNode();
-  sound.volume = magicGlowSound.volume;
-  sound.muted = isMuted;
+  sound.volume = (magicGlowSound._baseVolume ?? magicGlowSound.volume) * getSfxVolume();
+  sound.muted = isSfxMuted;
   sound.play().catch(() => {});
 }
 
 function playGreenClickSound() {
   const sound = greenClickSound.cloneNode();
-  sound.volume = greenClickSound.volume;
-  sound.muted = isMuted;
+  sound.volume = (greenClickSound._baseVolume ?? greenClickSound.volume) * getSfxVolume();
+  sound.muted = isSfxMuted;
   sound.play().catch(() => {});
 }
 
 function playBrainStageTwoAppearSound() {
   const sound = brainStageTwoAppearSound.cloneNode();
-  sound.volume = brainStageTwoAppearSound.volume;
-  sound.muted = isMuted;
+  sound.volume = (brainStageTwoAppearSound._baseVolume ?? brainStageTwoAppearSound.volume) * getSfxVolume();
+  sound.muted = isSfxMuted;
   sound.play().catch(() => {});
 }
 
 function playBlockedSound() {
   const sound = blockedSound.cloneNode();
-  sound.volume = blockedSound.volume;
+  sound.volume = (blockedSound._baseVolume ?? blockedSound.volume) * getSfxVolume();
+  sound.muted = isSfxMuted;
   sound.play().catch(() => {});
 }
 
@@ -6421,6 +6548,8 @@ function playConsoleStartSound() {
   if (consoleSoundPlayed) return;
 
   const sound = consoleStartSound.cloneNode();
+  sound.volume = (consoleStartSound._baseVolume ?? consoleStartSound.volume) * getSfxVolume();
+  sound.muted = isSfxMuted;
   sound.play().catch(() => {});
 
   consoleSoundPlayed = true;
@@ -6429,31 +6558,26 @@ function playConsoleStartSound() {
 function prepareBackgroundMusic() {
   if (!backgroundMusic) return;
 
-  backgroundMusic.volume = 0.12;
-  backgroundMusic.muted = isMuted;
+  backgroundMusic.volume = getMusicVolume();
+  backgroundMusic.muted = isMusicMuted;
 }
 
-function toggleMute() {
-  prepareBackgroundMusic();
-
-  if (!backgroundMusic) return;
-
-  isMuted = !isMuted;
-  backgroundMusic.muted = isMuted;
-  drain2MSound.muted = isMuted;
-  drainUpgradeSound.muted = isMuted;
-  magicGlowSound.muted = isMuted;
-  greenClickSound.muted = isMuted;
-  brainStageTwoAppearSound.muted = isMuted;
-  outroSound.muted = isMuted;
-  if (activeDrain2MSound) {
-    activeDrain2MSound.muted = isMuted;
+function toggleMusicMute() {
+  isMusicMuted = !isMusicMuted;
+  if (backgroundMusic) {
+    backgroundMusic.muted = isMusicMuted;
   }
-
-  const btn = document.getElementById("muteBtn");
-  if (btn) {
-    btn.textContent = isMuted ? "Unmute" : "Mute";
+  if (introMusic) {
+    introMusic.muted = isMusicMuted;
   }
+  updateAudioButtons();
+}
+
+function toggleSfxMute() {
+  isSfxMuted = !isSfxMuted;
+  applyAllSfxSettings();
+  stopConsoleTypingSound();
+  updateAudioButtons();
 }
 
 function clearLinkLayer() {
@@ -7192,8 +7316,8 @@ function startDemoEndingSequence() {
     document.body.classList.remove("demo-final-glitch");
     appShell.classList.remove("demo-final-glitch");
     const sound = outroSound.cloneNode();
-    sound.volume = outroSound.volume;
-    sound.muted = isMuted;
+    sound.volume = (outroSound._baseVolume ?? outroSound.volume) * getSfxVolume();
+    sound.muted = isSfxMuted;
     sound.play().catch(() => {});
     document.body.classList.add("demo-slam");
     appShell.classList.add("demo-slam");
@@ -9088,7 +9212,10 @@ if (resetConfirmAccept) {
 }
 const muteBtnNode = document.getElementById("muteBtn");
 if (muteBtnNode) {
-  muteBtnNode.addEventListener("click", toggleMute);
+  muteBtnNode.addEventListener("click", toggleMusicMute);
+}
+if (sfxMuteBtn) {
+  sfxMuteBtn.addEventListener("click", toggleSfxMute);
 }
 if (DEV_MODE && devDebugPanel) {
   devDebugPanel.addEventListener("click", (event) => {
@@ -9100,8 +9227,16 @@ if (DEV_MODE && devDebugPanel) {
   });
 }
 if (bgSlider) {
-  bgSlider.addEventListener("input", (e) => {
-    setBackgroundVolume(parseFloat(e.target.value));
+  bgSlider.addEventListener("input", () => {
+    musicVolume = clampAudioVolume(bgSlider.value, 0.12);
+    if (backgroundMusic) backgroundMusic.volume = getMusicVolume();
+    if (introMusic) introMusic.volume = getMusicVolume();
+  });
+}
+if (sfxVolumeSlider) {
+  sfxVolumeSlider.addEventListener("input", () => {
+    sfxVolume = clampAudioVolume(sfxVolumeSlider.value, 1);
+    applyAllSfxSettings();
   });
 }
 
@@ -9126,6 +9261,14 @@ window.addEventListener("resize", () => {
 cacheFixedUpgradeSpheres();
 ensureSynapseNodes();
 syncConsoleVisualState();
+prepareBackgroundMusic();
+if (bgSlider) {
+  bgSlider.value = String(getMusicVolume());
+}
+if (sfxVolumeSlider) {
+  sfxVolumeSlider.value = String(getSfxVolume());
+}
+updateAudioButtons();
 if (game.consolePowered) {
   startConsoleRandomMessages();
 }
