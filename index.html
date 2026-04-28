@@ -3687,7 +3687,7 @@ let devBoostEnabled = false;
 let devTimeMultiplier = 1;
 let pendingResetConfirmationAction = null;
 
-brainClickSound.volume = 0.78;
+brainClickSound.volume = Math.min(0.78 * 2, 1);
 agopunturaSound.volume = 0.7;
 diapasonSound.volume = 0.7;
 clickHoldSound.volume = 0.48;
