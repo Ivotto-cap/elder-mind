@@ -3691,10 +3691,11 @@ brainClickSound.volume = Math.min(0.78 * 2, 1);
 agopunturaSound.volume = 0.7;
 diapasonSound.volume = 0.7;
 clickHoldSound.volume = 0.48 * 0.5;
-vibranteSound.volume = 0.4;
+vibranteSound.volume = 0.4 * 0.7;
 achievementSound.volume = 0.75 * 0.7;
-bluePowerupSound.volume = 0.7;
-crystalPowerupSound.volume = 0.75 * 0.8;
+const BLUE_POWERUP_VOLUME = 0.7;
+bluePowerupSound.volume = BLUE_POWERUP_VOLUME;
+crystalPowerupSound.volume = 0.75 * 0.8 * 0.7;
 purplePowerupSound.volume = 0.7;
 greenPowerupSound.volume = 0.7;
 drain2MSound.volume = 0.6;
@@ -6384,6 +6385,34 @@ function playVibranteSound() {
   });
 }
 
+function startVibranteSound() {
+  if (isSfxMuted) return;
+
+  try {
+    const sound = vibranteSound.cloneNode();
+    sound._baseVolume = vibranteSound.volume;
+    sound.volume = vibranteSound.volume;
+    sound.muted = isSfxMuted;
+    activeVibranteSounds.push(sound);
+
+    sound.addEventListener("ended", () => {
+      activeVibranteSounds = activeVibranteSounds.filter((item) => item !== sound);
+    });
+
+    sound.play().catch(() => {
+      activeVibranteSounds = activeVibranteSounds.filter((item) => item !== sound);
+    });
+  } catch (e) {}
+}
+
+function startVibranteHoldSound() {
+  if (isSfxMuted) return;
+  if ((game.holdPulsePower || 0) <= 0) return;
+  if (activeVibranteSounds.length > 0) return;
+
+  playVibranteSound();
+}
+
 function stopVibranteSounds() {
   for (const sound of activeVibranteSounds) {
     sound.pause();
@@ -6405,7 +6434,7 @@ function playAchievementSound() {
 
 function playCoinSound() {
   const sound = new Audio("assets/audio/coin.wav");
-  sound._baseVolume = 0.6;
+  sound._baseVolume = 0.6 * 0.7;
   applySfxSettingsTo(sound, sound._baseVolume);
   sound.play().catch(() => {});
 }
@@ -6431,7 +6460,7 @@ function stopConsoleTypingSound() {
 
 function playBluePowerupSound() {
   const sound = bluePowerupSound.cloneNode();
-  sound.volume = (bluePowerupSound._baseVolume ?? bluePowerupSound.volume) * getSfxVolume();
+  sound.volume = bluePowerupSound.volume;
   sound.muted = isSfxMuted;
   sound.play().catch(() => {});
 }
@@ -8511,7 +8540,6 @@ function applyHoldPulseIncome(now) {
   while (now - lastHoldPulseAt >= HOLD_PULSE_INTERVAL_MS) {
     lastHoldPulseAt += HOLD_PULSE_INTERVAL_MS;
     addProducedImpulses(pulsePower, "active");
-    playVibranteSound();
     addUpgradeGenerated("cluster", pulsePower);
     trackAutoMultiplierGenerated(getUpgradeLevel("cluster") * getUpgradeConfigValue("cluster"));
     floatingValue(pulsePower, null, {
@@ -8591,6 +8619,8 @@ function beginBrainPress(pointerId) {
 
   clearTimeout(brainHoldTimer);
   stopBrainPressAnimation();
+  stopVibranteSounds();
+  startVibranteHoldSound();
   setBrainCompression(brainMinCompression, 24, "linear");
   setBrainHoldEnergy(0);
 
@@ -8617,6 +8647,7 @@ function releaseBrainPress(pointerId) {
   );
   brainIsPressed = false;
   activeBrainPointerId = null;
+  stopVibranteSounds();
   clearTimeout(brainHoldTimer);
   stopBrainPressAnimation();
   brainHoldProgress = 0;
