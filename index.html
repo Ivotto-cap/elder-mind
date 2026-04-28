@@ -3690,11 +3690,11 @@ let pendingResetConfirmationAction = null;
 brainClickSound.volume = Math.min(0.78 * 2, 1);
 agopunturaSound.volume = 0.7;
 diapasonSound.volume = 0.7;
-clickHoldSound.volume = 0.48;
+clickHoldSound.volume = 0.48 * 0.5;
 vibranteSound.volume = 0.4;
-achievementSound.volume = 0.75;
+achievementSound.volume = 0.75 * 0.7;
 bluePowerupSound.volume = 0.7;
-crystalPowerupSound.volume = 0.75;
+crystalPowerupSound.volume = 0.75 * 0.8;
 purplePowerupSound.volume = 0.7;
 greenPowerupSound.volume = 0.7;
 drain2MSound.volume = 0.6;
@@ -3737,7 +3737,7 @@ function clampAudioVolume(value, fallback = 1) {
 }
 
 function getMusicVolume() {
-  return clampAudioVolume(musicVolume, 0.12) * 0.7;
+  return clampAudioVolume(musicVolume, 0.12) * 0.5;
 }
 
 function getSfxVolume() {
@@ -6395,7 +6395,7 @@ function stopVibranteSounds() {
 
 function playAchievementSound() {
   const sound = achievementSound.cloneNode();
-  sound.volume = (achievementSound._baseVolume ?? achievementSound.volume) * getSfxVolume();
+  sound.volume = achievementSound.volume;
   sound.muted = isSfxMuted;
 
   sound.play().catch((error) => {
@@ -6438,7 +6438,7 @@ function playBluePowerupSound() {
 
 function playCrystalPowerupSound() {
   const sound = crystalPowerupSound.cloneNode();
-  sound.volume = (crystalPowerupSound._baseVolume ?? crystalPowerupSound.volume) * getSfxVolume();
+  sound.volume = crystalPowerupSound.volume;
   sound.muted = isSfxMuted;
   sound.play().catch(() => {});
 }
