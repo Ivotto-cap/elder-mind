@@ -1,0 +1,3978 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Elder Mind</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-1: #030812;
+  --bg-2: #071421;
+  --panel: rgba(7, 18, 31, 0.7);
+  --panel-strong: rgba(10, 28, 44, 0.92);
+  --line: rgba(121, 240, 255, 0.22);
+  --text: #dffcff;
+  --muted: #7aa6b2;
+  --accent: #72f0ff;
+  --accent-strong: #d8feff;
+  --accent-soft: rgba(114, 240, 255, 0.12);
+  --success: #b4ffc7;
+  --danger: #ffb9c2;
+  --chamber-glow: 0.08;
+  --chamber-left: 0.035;
+  --chamber-right: 0.03;
+  --grid-opacity: 0.18;
+  --ambient-brightness: 0.58;
+  --ambient-saturate: 0.7;
+  --veil-opacity: 0.42;
+  --console-shell-opacity: 0;
+  --console-screen-opacity: 0;
+  --console-brightness: 0.32;
+  --console-saturate: 0.5;
+  --upgrade-field-opacity: 0.18;
+  --link-layer-opacity: 0.12;
+  --environment-opacity: 0.18;
+  --brain-presence: 0.42;
+  --ui-panel-opacity: 0.3;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  overflow-x: hidden;
+  color: var(--text);
+  font-family: "Rajdhani", sans-serif;
+  background:
+    radial-gradient(circle at 50% 34%, rgba(29, 107, 138, var(--chamber-glow)), transparent 26%),
+    radial-gradient(circle at 18% 18%, rgba(114, 240, 255, var(--chamber-left)), transparent 16%),
+    radial-gradient(circle at 82% 20%, rgba(182, 255, 209, var(--chamber-right)), transparent 13%),
+    linear-gradient(180deg, var(--bg-2), var(--bg-1));
+  transition: background 1.2s ease;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(114, 240, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(114, 240, 255, 0.03) 1px, transparent 1px);
+  background-size: 38px 38px;
+  opacity: var(--grid-opacity);
+  pointer-events: none;
+  mask-image: radial-gradient(circle at center, black 28%, transparent 88%);
+  transition: opacity 1.2s ease;
+}
+
+.neural-environment {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: var(--environment-opacity);
+  transition: opacity 1.2s ease;
+}
+
+.environment-canvas,
+.environment-pulses,
+.environment-fog {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.environment-fog {
+  opacity: 0.38;
+  mix-blend-mode: screen;
+}
+
+.environment-fog::before,
+.environment-fog::after {
+  content: "";
+  position: absolute;
+  inset: -10%;
+  background-repeat: no-repeat;
+  filter: blur(36px);
+  opacity: 0.22;
+}
+
+.environment-fog::before {
+  background:
+    radial-gradient(circle at 22% 34%, rgba(62, 145, 170, 0.16), transparent 22%),
+    radial-gradient(circle at 68% 52%, rgba(46, 116, 140, 0.12), transparent 24%);
+  animation: fogDriftA 28s linear infinite;
+}
+
+.environment-fog::after {
+  background:
+    radial-gradient(circle at 72% 28%, rgba(118, 246, 255, 0.08), transparent 18%),
+    radial-gradient(circle at 36% 70%, rgba(60, 122, 146, 0.12), transparent 22%);
+  animation: fogDriftB 34s linear infinite;
+}
+
+.environment-pulses {
+  overflow: hidden;
+}
+
+.bg-pulse {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid rgba(114, 240, 255, 0.16);
+  background: radial-gradient(circle, rgba(114, 240, 255, 0.12), transparent 72%);
+  transform: translate(-50%, -50%) scale(0.24);
+  opacity: 0;
+  animation: backgroundPulse 1.7s ease-out forwards;
+}
+
+.app {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  padding: 18px;
+  opacity: 0.72;
+  filter: saturate(var(--ambient-saturate)) brightness(var(--ambient-brightness));
+  transition: opacity 1.2s ease, filter 1.2s ease;
+}
+
+.app.revealed {
+  opacity: 1;
+}
+
+.app::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(0, 0, 0, calc(var(--veil-opacity) * 0.2)), transparent 24%),
+    linear-gradient(180deg, rgba(0, 0, 0, var(--veil-opacity)), rgba(2, 6, 12, calc(var(--veil-opacity) + 0.08)));
+  pointer-events: none;
+  z-index: 0;
+  transition: opacity 1.2s ease, background 1.2s ease;
+}
+
+.intro-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  align-items: end;
+  justify-items: center;
+  padding: clamp(24px, 4vw, 48px);
+  background:
+    linear-gradient(180deg, rgba(2, 7, 12, 0.28), rgba(2, 7, 12, 0.52)),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.54)),
+    url("intro.png") center / cover no-repeat;
+  cursor: pointer;
+  transition: opacity 0.7s ease, visibility 0.7s ease;
+}
+
+.intro-overlay.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.intro-cinematic-content {
+  width: min(100%, 980px);
+  padding: clamp(18px, 3vw, 32px);
+  text-align: center;
+  color: rgba(244, 245, 247, 0.96);
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.45);
+}
+
+.intro-title {
+  display: grid;
+  gap: 0.32em;
+  margin-bottom: 20px;
+  font-family: "Orbitron", sans-serif;
+  font-size: clamp(1.4rem, 2.9vw, 2.85rem);
+  line-height: 1.24;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.intro-title p {
+  margin: 0;
+}
+
+.intro-start {
+  color: rgba(226, 231, 236, 0.88);
+  font-size: clamp(0.78rem, 1.2vw, 0.96rem);
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+}
+
+.topbar {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.brand {
+  padding: 10px 12px;
+  border: 1px solid rgba(114, 240, 255, 0.1);
+  border-radius: 16px;
+  background: rgba(5, 14, 24, 0.42);
+  backdrop-filter: blur(10px);
+}
+
+.brand .eyebrow {
+  color: var(--muted);
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+}
+
+.brand h1 {
+  margin: 4px 0 0;
+  font-family: "Orbitron", sans-serif;
+  font-size: clamp(1rem, 1.8vw, 1.4rem);
+  letter-spacing: 0.22em;
+}
+
+.stats {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.floating-stats {
+  position: absolute;
+  left: 50%;
+  top: 14px;
+  transform: translateX(-50%);
+  z-index: 4;
+  opacity: var(--ui-panel-opacity);
+  transition: opacity 1s ease;
+}
+
+.stat {
+  min-width: 126px;
+  padding: 9px 14px;
+  border-radius: 15px;
+  border: 1px solid rgba(114, 240, 255, 0.1);
+  background: rgba(5, 14, 24, 0.46);
+  backdrop-filter: blur(10px);
+}
+
+.stat.primary-stat {
+  min-width: 144px;
+  padding: 10px 16px;
+}
+
+.stat.hidden-stat {
+  display: none;
+}
+
+.stat-label {
+  color: var(--muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.stat-value {
+  margin-top: 4px;
+  font-family: "Orbitron", sans-serif;
+  font-size: 1.1rem;
+}
+
+.arena {
+  position: relative;
+  min-height: calc(100vh - 110px);
+  margin-top: 8px;
+  padding-top: 72px;
+}
+
+.neural-console {
+  position: absolute;
+  left: 2%;
+  top: 50%;
+  width: clamp(280px, 30vw, 460px);
+  transform: translateY(-50%);
+  z-index: 3;
+  pointer-events: none;
+  opacity: var(--console-shell-opacity);
+  filter: brightness(var(--console-brightness)) saturate(var(--console-saturate));
+  transition: opacity 1.2s ease, filter 1.2s ease;
+}
+
+.console-bg {
+  display: block;
+  width: 100%;
+  height: auto;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.console-text {
+  position: absolute;
+  top: 18%;
+  left: 14%;
+  width: 72%;
+  height: 60%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 6px;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.15);
+  color: #7df9ff;
+  font-family: monospace;
+  font-size: 13px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  overflow: hidden;
+  overflow-y: auto;
+  opacity: 0;
+  text-shadow: 0 0 8px rgba(125, 249, 255, 0.18);
+  transition: opacity 0.7s ease, text-shadow 0.5s ease;
+  scrollbar-width: none;
+}
+
+.console-text::-webkit-scrollbar {
+  display: none;
+}
+
+.console-text.console-visible {
+  opacity: var(--console-screen-opacity);
+}
+
+.console-text.console-fade-out {
+  opacity: 0;
+}
+
+.neural-console.powered .console-text {
+  text-shadow:
+    0 0 10px rgba(125, 249, 255, 0.24),
+    0 0 20px rgba(78, 220, 255, 0.08);
+}
+
+.neural-console.powered .console-text::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(125, 249, 255, 0.05) 0,
+    rgba(125, 249, 255, 0.05) 1px,
+    transparent 1px,
+    transparent 4px
+  );
+  mix-blend-mode: screen;
+  opacity: 0.18;
+  pointer-events: none;
+  animation: consoleFlicker 2.8s linear infinite;
+}
+
+.console-awakening-spark {
+  position: absolute;
+  z-index: 20;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(230,255,255,1), rgba(114,240,255,0.55) 38%, transparent 72%);
+  box-shadow:
+    0 0 18px rgba(114,240,255,0.8),
+    0 0 42px rgba(114,240,255,0.35);
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  animation: consoleSparkPulse 0.7s ease-in-out infinite;
+}
+
+@keyframes consoleSparkPulse {
+  0%, 100% { opacity: 0.75; transform: translate(-50%, -50%) scale(0.8); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.25); }
+}
+
+.link-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+  overflow: visible;
+  opacity: var(--link-layer-opacity);
+  transition: opacity 1s ease;
+}
+
+.root-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.root-spark {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid rgba(235, 255, 255, 0.95);
+  background: rgba(114, 240, 255, 0.2);
+  box-shadow: 0 0 28px rgba(114, 240, 255, 0.45);
+  transform: translate(-50%, -50%) scale(0.28);
+  opacity: 0;
+}
+
+.upgrade-field {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  opacity: var(--upgrade-field-opacity);
+  transition: opacity 1s ease;
+}
+
+.synapse-node {
+  position: absolute;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  border: 1px solid rgba(220, 252, 255, 0.28);
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.98), rgba(220, 252, 255, 0.92) 18%, rgba(126, 242, 255, 0.74) 38%, rgba(84, 182, 216, 0.28) 62%, rgba(16, 34, 48, 0.12) 82%, transparent 100%);
+  box-shadow:
+    0 0 18px rgba(114, 240, 255, 0.22),
+    0 0 34px rgba(114, 240, 255, 0.14),
+    inset 0 0 12px rgba(255, 255, 255, 0.24);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(1);
+  pointer-events: none;
+  transition:
+    opacity 0.24s ease,
+    transform 0.24s ease,
+    box-shadow 0.26s ease,
+    border-color 0.26s ease;
+}
+
+.synapse-node.visible {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+  pointer-events: auto;
+}
+
+.synapse-node.unlocked {
+  opacity: 0.96;
+  border-color: rgba(226, 254, 255, 0.42);
+  box-shadow:
+    0 0 22px rgba(114, 240, 255, 0.3),
+    0 0 40px rgba(114, 240, 255, 0.18),
+    inset 0 0 14px rgba(255, 255, 255, 0.3);
+}
+
+.synapse-node.primary-upgrade {
+  width: 74px;
+  height: 74px;
+  box-shadow:
+    0 0 20px rgba(114, 240, 255, 0.24),
+    0 0 36px rgba(114, 240, 255, 0.14),
+    inset 0 0 14px rgba(255, 255, 255, 0.26);
+}
+
+.synapse-node.primary-upgrade.visible,
+.synapse-node.primary-upgrade.unlocked {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+  box-shadow:
+    0 0 26px rgba(114, 240, 255, 0.34),
+    0 0 46px rgba(114, 240, 255, 0.2),
+    inset 0 0 16px rgba(255, 255, 255, 0.3);
+}
+
+.synapse-node.primary-upgrade.locked {
+  opacity: 0.54;
+  border-color: rgba(176, 228, 236, 0.18);
+  box-shadow:
+    0 0 8px rgba(114, 240, 255, 0.08),
+    inset 0 0 6px rgba(255, 255, 255, 0.14);
+}
+
+.synapse-node.affordable {
+  pointer-events: auto;
+  animation: synapsePulse 1.7s ease-in-out infinite;
+}
+
+.synapse-node.clicked {
+  animation: synapseClick 0.34s ease-out;
+}
+
+.synapse-node .synapse-icon {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  color: rgba(246, 255, 255, 0.98);
+  font-family: "Orbitron", sans-serif;
+  font-size: 1.08rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-shadow:
+    0 0 8px rgba(255, 255, 255, 0.5),
+    0 0 14px rgba(114, 240, 255, 0.28);
+  transition:
+    opacity 0.22s ease,
+    filter 0.24s ease,
+    text-shadow 0.24s ease;
+}
+
+.synapse-node .synapse-icon-image {
+  width: 106%;
+  height: 106%;
+  object-fit: contain;
+  object-position: center;
+  pointer-events: none;
+  transform: scale(1.08);
+  filter:
+    drop-shadow(0 0 6px rgba(255, 255, 255, 0.4))
+    drop-shadow(0 0 11px rgba(114, 240, 255, 0.22));
+  transition:
+    opacity 0.22s ease,
+    filter 0.24s ease,
+    transform 0.24s ease;
+}
+
+.synapse-node.inactive-upgrade {
+  box-shadow:
+    0 0 14px rgba(114, 240, 255, 0.18),
+    0 0 24px rgba(114, 240, 255, 0.1),
+    inset 0 0 10px rgba(255, 255, 255, 0.18);
+}
+
+.synapse-node.inactive-upgrade .synapse-icon {
+  opacity: 0.76;
+  filter: brightness(0.82) saturate(0.88);
+  text-shadow:
+    0 0 6px rgba(255, 255, 255, 0.26),
+    0 0 10px rgba(114, 240, 255, 0.16);
+}
+
+.synapse-node.inactive-upgrade .synapse-icon-image {
+  opacity: 0.78;
+  filter:
+    brightness(0.84)
+    saturate(0.9)
+    drop-shadow(0 0 4px rgba(255, 255, 255, 0.24))
+    drop-shadow(0 0 8px rgba(114, 240, 255, 0.14));
+}
+
+.synapse-node.active-upgrade {
+  box-shadow:
+    0 0 26px rgba(114, 240, 255, 0.34),
+    0 0 46px rgba(114, 240, 255, 0.2),
+    inset 0 0 16px rgba(255, 255, 255, 0.3);
+}
+
+.synapse-node.active-upgrade .synapse-icon {
+  opacity: 1;
+  filter: brightness(1) saturate(1);
+}
+
+.synapse-node.active-upgrade .synapse-icon-image {
+  opacity: 1;
+}
+
+.synapse-node.future-upgrade {
+  opacity: 0.2;
+  pointer-events: none;
+  box-shadow:
+    0 0 12px rgba(114, 240, 255, 0.1),
+    0 0 20px rgba(114, 240, 255, 0.06),
+    inset 0 0 10px rgba(255, 255, 255, 0.12);
+}
+
+.synapse-node.future-upgrade .synapse-icon {
+  opacity: 0.5;
+  filter: brightness(0.72) saturate(0.82);
+  text-shadow:
+    0 0 6px rgba(255, 255, 255, 0.16),
+    0 0 8px rgba(114, 240, 255, 0.12);
+}
+
+.synapse-node.future-upgrade .synapse-owned {
+  opacity: 0;
+}
+
+.synapse-node.future-upgrade.future-upgrade-lit {
+  opacity: 0.62;
+  box-shadow:
+    0 0 18px rgba(114, 240, 255, 0.18),
+    0 0 32px rgba(114, 240, 255, 0.12),
+    inset 0 0 12px rgba(255, 255, 255, 0.18);
+}
+
+.synapse-node.future-upgrade.future-upgrade-lit .synapse-icon {
+  opacity: 0.82;
+  filter: brightness(0.9) saturate(0.94);
+}
+
+.synapse-node.upgrade-synapse {
+  border-color: rgba(255, 255, 255, 0.45);
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 1) 0%, rgba(250, 255, 255, 0.98) 26%, rgba(228, 248, 255, 0.88) 52%, rgba(155, 226, 242, 0.26) 76%, transparent 100%);
+  box-shadow:
+    0 0 16px rgba(255, 255, 255, 0.24),
+    0 0 28px rgba(160, 236, 255, 0.18),
+    inset 0 0 12px rgba(255, 255, 255, 0.34);
+}
+
+.synapse-node.upgrade-synapse .synapse-icon {
+  color: rgba(16, 38, 56, 0.98);
+  font-size: 2.95rem;
+  font-weight: 800;
+  line-height: 1;
+  text-shadow:
+    0 0 8px rgba(255, 255, 255, 0.36),
+    0 0 14px rgba(114, 240, 255, 0.2);
+}
+
+.synapse-node.upgrade-synapse .synapse-icon-image {
+  width: 116%;
+  height: 116%;
+  transform: scale(1.12);
+  filter:
+    drop-shadow(0 0 6px rgba(255, 255, 255, 0.44))
+    drop-shadow(0 0 12px rgba(114, 240, 255, 0.22));
+}
+
+.synapse-node.upgrade-cortex .synapse-icon-image {
+  width: 112%;
+  height: 112%;
+  transform: scale(1.1);
+}
+
+.synapse-node.upgrade-drone .synapse-icon-image,
+.synapse-node.upgrade-cluster .synapse-icon-image {
+  width: 110%;
+  height: 110%;
+  transform: scale(1.09);
+}
+
+.synapse-node.upgrade-psicocristallo .synapse-icon-image,
+.synapse-node.upgrade-agopuntura .synapse-icon-image,
+.synapse-node.upgrade-riverbero .synapse-icon-image,
+.synapse-node.upgrade-diapason .synapse-icon-image {
+  width: 110%;
+  height: 110%;
+  transform: scale(1.09);
+}
+
+.synapse-node.upgrade-synapse.unlocked,
+.synapse-node.upgrade-synapse.primary-upgrade.visible {
+  box-shadow:
+    0 0 30px rgba(255, 255, 255, 0.32),
+    0 0 52px rgba(160, 236, 255, 0.26),
+    inset 0 0 16px rgba(255, 255, 255, 0.42);
+}
+
+.synapse-node:hover,
+.synapse-node:focus-visible {
+  transform: translate(-50%, -50%) scale(1.12);
+  box-shadow:
+    0 0 30px rgba(114, 240, 255, 0.4),
+    0 0 54px rgba(114, 240, 255, 0.24),
+    inset 0 0 16px rgba(255, 255, 255, 0.32);
+}
+
+.synapse-node.upgrade-cortex {
+  border-color: rgba(180, 224, 255, 0.3);
+  background:
+    radial-gradient(circle at 32% 28%, rgba(238, 245, 255, 0.98) 0%, rgba(196, 222, 255, 0.86) 22%, rgba(107, 153, 255, 0.68) 46%, rgba(44, 74, 156, 0.3) 72%, transparent 100%);
+  box-shadow:
+    0 0 16px rgba(120, 170, 255, 0.24),
+    0 0 30px rgba(84, 126, 255, 0.16),
+    inset 0 0 12px rgba(236, 244, 255, 0.22);
+}
+
+.synapse-node.upgrade-drone {
+  border-color: rgba(192, 255, 220, 0.28);
+  background:
+    radial-gradient(circle at 32% 28%, rgba(247, 255, 249, 0.98) 0%, rgba(214, 255, 226, 0.9) 22%, rgba(108, 255, 180, 0.68) 46%, rgba(28, 122, 86, 0.28) 72%, transparent 100%);
+  box-shadow:
+    0 0 16px rgba(112, 255, 192, 0.24),
+    0 0 30px rgba(64, 220, 158, 0.16),
+    inset 0 0 12px rgba(244, 255, 248, 0.22);
+}
+
+.synapse-node.upgrade-cluster {
+  border-color: rgba(212, 214, 255, 0.28);
+  background:
+    radial-gradient(circle at 32% 28%, rgba(250, 248, 255, 0.98) 0%, rgba(230, 222, 255, 0.88) 22%, rgba(175, 136, 255, 0.66) 46%, rgba(92, 54, 156, 0.3) 72%, transparent 100%);
+  box-shadow:
+    0 0 16px rgba(190, 154, 255, 0.24),
+    0 0 30px rgba(144, 94, 255, 0.16),
+    inset 0 0 12px rgba(250, 246, 255, 0.22);
+}
+
+.synapse-node.upgrade-cortex.unlocked,
+.synapse-node.upgrade-drone.unlocked,
+.synapse-node.upgrade-cluster.unlocked,
+.synapse-node.upgrade-cortex.primary-upgrade.visible,
+.synapse-node.upgrade-drone.primary-upgrade.visible,
+.synapse-node.upgrade-cluster.primary-upgrade.visible {
+  opacity: 1;
+}
+
+.synapse-owned {
+  position: absolute;
+  right: -8px;
+  bottom: -8px;
+  min-width: 26px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: rgba(4, 12, 20, 0.82);
+  border: 1px solid rgba(114, 240, 255, 0.16);
+  color: rgba(220, 255, 255, 0.86);
+  font-family: "Orbitron", sans-serif;
+  font-size: 0.58rem;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.synapse-tooltip {
+  position: fixed;
+  right: 28px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: min(360px, 28vw);
+  min-height: 260px;
+  padding: 22px 24px;
+  border: 1px solid rgba(114, 240, 255, 0.18);
+  border-radius: 22px;
+  background: rgba(4, 12, 20, 0.92);
+  color: rgba(222, 242, 248, 0.92);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 0 34px rgba(114, 240, 255, 0.08);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.28s ease, transform 0.28s ease;
+  z-index: 30;
+}
+
+.synapse-tooltip.visible {
+  opacity: 1;
+  transform: translateY(-50%);
+}
+
+.synapse-tooltip .tooltip-name {
+  font-family: "Orbitron", sans-serif;
+  font-size: 1rem;
+  line-height: 1.35;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.synapse-tooltip .tooltip-level {
+  margin-top: 8px;
+  color: rgba(214, 236, 242, 0.76);
+  font-family: "Orbitron", sans-serif;
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.synapse-tooltip .tooltip-desc {
+  margin-top: 16px;
+  color: rgba(196, 220, 227, 0.78);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.synapse-tooltip .tooltip-cost {
+  margin-top: 18px;
+  color: var(--success);
+  font-family: "Orbitron", sans-serif;
+  font-size: 0.9rem;
+}
+
+.tooltip-tech {
+  margin-top: 14px;
+  font-size: 0.75rem;
+  color: rgba(114, 240, 255, 0.85);
+  font-family: monospace;
+  letter-spacing: 0.04em;
+  opacity: 0.85;
+}
+
+.tool-rack {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
+  opacity: var(--ui-panel-opacity);
+  transition: opacity 1s ease;
+}
+
+.tool-slot {
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  border: 1px solid rgba(114, 240, 255, 0.14);
+  background: linear-gradient(180deg, rgba(8, 20, 31, 0.92), rgba(4, 10, 18, 0.96));
+  color: rgba(224, 246, 255, 0.88);
+  box-shadow: 0 0 22px rgba(114, 240, 255, 0.06);
+  pointer-events: auto;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: transform 0.16s ease, opacity 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+}
+
+.tool-slot.hidden {
+  display: none;
+}
+
+.tool-slot-icon {
+  font-family: "Orbitron", sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.tool-icon-image {
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+  object-position: center;
+  pointer-events: none;
+}
+
+.tool-slot:hover:not(:disabled),
+.tool-slot:focus-visible:not(:disabled) {
+  transform: scale(1.06);
+  border-color: rgba(114, 240, 255, 0.28);
+  box-shadow: 0 0 26px rgba(114, 240, 255, 0.12);
+}
+
+.tool-slot.active {
+  border-color: rgba(255, 223, 132, 0.38);
+  box-shadow: 0 0 30px rgba(255, 214, 112, 0.2);
+  color: rgba(255, 247, 218, 0.96);
+  animation: breathe 1.2s ease-in-out infinite;
+}
+
+.tool-slot.cooldown {
+  opacity: 0.42;
+  filter: saturate(0.7);
+  cursor: not-allowed;
+}
+
+.core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(34vw, 360px);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  z-index: 4;
+  --hold-energy: 0;
+}
+
+.core::before,
+.core::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(114, 240, 255, 0.18);
+}
+
+.core::before {
+  inset: 2%;
+  animation: slowSpin 18s linear infinite;
+}
+
+.core::after {
+  inset: 12%;
+  animation: slowSpinReverse 14s linear infinite;
+}
+
+.core-glow {
+  position: absolute;
+  inset: 22%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(114, 240, 255, 0.42), rgba(114, 240, 255, 0.12) 42%, transparent 75%);
+  filter: blur(12px) brightness(calc(0.86 + var(--hold-energy) * 0.45));
+  animation: breathe 2.8s ease-in-out infinite;
+  opacity: calc(0.42 + var(--hold-energy) * 0.16);
+  transition: opacity 0.18s linear, filter 0.18s linear;
+}
+
+.brain-stack {
+  position: relative;
+  z-index: 2;
+  width: 76%;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  overflow: visible;
+}
+
+.brain-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+  opacity: 0;
+  object-position: center center;
+  filter: brightness(calc(0.42 + var(--hold-energy) * 0.08)) saturate(calc(0.55 + var(--hold-energy) * 0.08)) contrast(0.92) drop-shadow(0 0 calc(10px + var(--hold-energy) * 8px) rgba(114, 240, 255, calc(0.16 + var(--hold-energy) * 0.1)));
+  transform: translateX(16%);
+  transition: opacity 0.7s ease, filter 0.18s linear;
+}
+
+.brain-layer.active {
+  opacity: 1;
+  filter:
+    brightness(calc(var(--brain-presence) + var(--hold-energy) * 0.08))
+    saturate(calc(0.38 + var(--hold-energy) * 0.08))
+    contrast(0.9)
+    drop-shadow(0 0 calc(8px + var(--hold-energy) * 8px) rgba(114, 240, 255, calc(0.08 + var(--hold-energy) * 0.1)));
+}
+
+#brain {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-drag: none;
+  touch-action: manipulation;
+  background: transparent;
+  transform: scale(1);
+  transition: transform 0.06s linear;
+  will-change: transform;
+}
+
+.core.is-awake .core-glow {
+  opacity: calc(0.18 + var(--brain-presence) * 0.9);
+}
+
+.core.is-awake .brain-layer {
+  filter:
+    brightness(calc(0.3 + var(--brain-presence) * 0.72))
+    saturate(calc(0.34 + var(--brain-presence) * 0.74))
+    contrast(calc(0.88 + var(--brain-presence) * 0.12))
+    drop-shadow(0 0 calc(10px + var(--brain-presence) * 22px) rgba(114, 240, 255, calc(0.14 + var(--brain-presence) * 0.34)));
+}
+
+#brain:hover .brain-layer {
+  filter:
+    brightness(calc(0.34 + var(--brain-presence) * 0.46))
+    saturate(calc(0.38 + var(--brain-presence) * 0.48))
+    contrast(calc(0.9 + var(--brain-presence) * 0.08))
+    drop-shadow(0 0 calc(10px + var(--brain-presence) * 14px) rgba(114, 240, 255, calc(0.12 + var(--brain-presence) * 0.18)));
+}
+
+.core.is-awake #brain:hover .brain-layer {
+  filter:
+    brightness(calc(0.42 + var(--brain-presence) * 0.74))
+    saturate(calc(0.42 + var(--brain-presence) * 0.72))
+    contrast(1)
+    drop-shadow(0 0 calc(14px + var(--brain-presence) * 24px) rgba(114, 240, 255, calc(0.16 + var(--brain-presence) * 0.38)));
+}
+
+#brain:hover {
+  transform: scale(1.03);
+}
+
+.hint {
+  position: absolute;
+  left: 50%;
+  top: calc(50% + min(18vw, 180px));
+  transform: translateX(-50%);
+  z-index: 3;
+  padding: 12px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(114, 240, 255, 0.1);
+  background: rgba(5, 14, 24, 0.58);
+  color: rgba(196, 220, 227, 0.72);
+  backdrop-filter: blur(10px);
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+
+.hint.hidden {
+  opacity: 0;
+  transform: translateX(-50%) translateY(12px);
+  pointer-events: none;
+}
+
+.brain-flash,
+.hold-crown,
+.charge-burst,
+.charge-wave,
+.ripple,
+.float-number {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.brain-fx-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+}
+
+.core.diapason-active .brain-fx-layer::before,
+.core.diapason-active .brain-fx-layer::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 34%;
+  height: 34%;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 217, 120, 0.42);
+  box-shadow:
+    0 0 16px rgba(255, 210, 112, 0.12),
+    inset 0 0 10px rgba(255, 236, 176, 0.08);
+  transform: translate(-50%, -50%) scale(0.5);
+  opacity: 0;
+  animation: diapasonWave 1.8s ease-out infinite;
+}
+
+.core.diapason-active .brain-fx-layer::after {
+  animation-delay: 0.9s;
+}
+
+.dendritic-needle {
+  position: absolute;
+  left: 78%;
+  top: 8%;
+  width: clamp(34px, 6vw, 46px);
+  height: auto;
+  opacity: 0;
+  transform: translate(-50%, 0) rotate(30deg) scaleY(0.92);
+  transform-origin: center 10%;
+  transition: opacity 0.22s ease, filter 0.22s ease;
+  filter:
+    brightness(1.02)
+    drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4))
+    drop-shadow(0 0 4px rgba(255, 218, 136, 0.14));
+  pointer-events: none;
+  z-index: 6;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.core.agopuntura-buff-active .dendritic-needle {
+  opacity: 0.96;
+  filter:
+    brightness(1.08)
+    drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4))
+    drop-shadow(0 0 7px rgba(255, 216, 132, 0.24));
+}
+
+.brain-flash {
+  z-index: 6;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(236, 255, 255, 0.8) 0%, rgba(114, 240, 255, 0.32) 38%, rgba(114, 240, 255, 0.08) 64%, transparent 100%);
+  mix-blend-mode: screen;
+  filter: blur(2px);
+  animation: brainFlash 0.28s ease-out forwards;
+}
+
+.hold-crown {
+  z-index: 7;
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(245, 255, 255, 0.86) 0%, rgba(114, 240, 255, 0.28) 34%, rgba(114, 240, 255, 0.08) 56%, transparent 74%);
+  mix-blend-mode: screen;
+  filter: blur(3px);
+  animation: holdCrown 0.64s ease-out forwards;
+}
+
+.ripple {
+  z-index: 5;
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  animation: ripple 0.46s ease-out forwards;
+}
+
+.core.agopuntura-buff-active .ripple {
+  border-color: rgba(255, 215, 120, 0.86);
+  box-shadow:
+    0 0 14px rgba(255, 212, 126, 0.22),
+    0 0 24px rgba(255, 188, 92, 0.12);
+}
+
+.charge-burst {
+  z-index: 7;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(245, 255, 255, 0.92) 0%, rgba(114, 240, 255, 0.48) 36%, rgba(114, 240, 255, 0.12) 64%, transparent 100%);
+  mix-blend-mode: screen;
+  filter: blur(2px);
+  animation: chargeBurst 0.42s ease-out forwards;
+}
+
+.charge-wave {
+  z-index: 6;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid rgba(180, 248, 255, 0.6);
+  box-shadow: 0 0 20px rgba(114, 240, 255, 0.18);
+  animation: chargeWave 0.58s ease-out forwards;
+}
+
+.float-number {
+  color: var(--accent-strong);
+  z-index: 5;
+  font-family: "Orbitron", sans-serif;
+  font-size: clamp(1rem, 2vw, 1.4rem);
+  font-weight: 700;
+  white-space: nowrap;
+  text-shadow: 0 0 18px rgba(114, 240, 255, 0.5);
+  animation: rise 0.9s ease-out forwards;
+}
+
+.float-number.hold-tick {
+  color: rgba(190, 244, 255, 0.88);
+  font-size: clamp(0.92rem, 1.8vw, 1.18rem);
+  text-shadow: 0 0 14px rgba(114, 240, 255, 0.34);
+}
+
+#brain.tool-psicocristallo-active {
+  cursor: url("cursorerosso-32.png") 8 8, pointer;
+}
+
+.upgrade-node {
+  position: absolute;
+  width: 170px;
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px solid rgba(114, 240, 255, 0.09);
+  background: linear-gradient(180deg, rgba(10, 26, 41, 0.36), rgba(5, 14, 24, 0.78));
+  backdrop-filter: blur(10px);
+  opacity: 0;
+  transform: translateY(12px) scale(0.94);
+  pointer-events: none;
+  transition: opacity 0.28s ease, transform 0.28s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.upgrade-node.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.upgrade-node.lit {
+  border-color: rgba(114, 240, 255, 0.34);
+  box-shadow: 0 0 24px rgba(114, 240, 255, 0.08);
+}
+
+.upgrade-node.flash {
+  animation: nodeFlash 1.1s ease-out;
+}
+
+.upgrade-node.available {
+  pointer-events: auto;
+}
+
+.upgrade-name {
+  font-family: "Orbitron", sans-serif;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  line-height: 1.35;
+}
+
+.upgrade-desc {
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.25;
+}
+
+.upgrade-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.upgrade-cost {
+  color: var(--success);
+  font-family: "Orbitron", sans-serif;
+  font-size: 0.8rem;
+}
+
+.upgrade-owned {
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.upgrade-btn {
+  margin-top: 10px;
+  width: 100%;
+  border: 1px solid rgba(114, 240, 255, 0.22);
+  border-radius: 999px;
+  background: rgba(10, 39, 56, 0.88);
+  color: var(--text);
+  padding: 9px 12px;
+  font-family: "Orbitron", sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: opacity 0.14s ease, transform 0.14s ease, border-color 0.18s ease;
+}
+
+.upgrade-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(114, 240, 255, 0.5);
+}
+
+.upgrade-btn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+.footer {
+  position: fixed;
+  left: 18px;
+  right: 18px;
+  bottom: 18px;
+  z-index: 4;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(114, 240, 255, 0.1);
+  background: rgba(5, 14, 24, 0.5);
+  backdrop-filter: blur(10px);
+}
+
+.status {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.reset-btn {
+  border: 1px solid rgba(255, 185, 194, 0.28);
+  border-radius: 999px;
+  background: rgba(45, 11, 18, 0.72);
+  color: var(--danger);
+  padding: 8px 14px;
+  font-family: "Orbitron", sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+@keyframes ripple {
+  to {
+    transform: translate(-50%, -50%) scale(4.2);
+    opacity: 0;
+  }
+}
+
+@keyframes diapasonWave {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.42);
+  }
+  18% {
+    opacity: 0.42;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(2.15);
+  }
+}
+
+@keyframes consoleFlicker {
+  0%, 100% { opacity: 0.14; }
+  48% { opacity: 0.2; }
+  50% { opacity: 0.1; }
+  52% { opacity: 0.18; }
+}
+
+@keyframes rise {
+  to {
+    transform: translate(-50%, -85px);
+    opacity: 0;
+  }
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(0.95); opacity: 0.7; }
+  50% { transform: scale(1.05); opacity: 1; }
+}
+
+@keyframes brainFlash {
+  0% {
+    opacity: 0.72;
+    transform: translate(-50%, -50%) scale(0.42);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.7);
+  }
+}
+
+@keyframes chargeBurst {
+  0% {
+    opacity: 0.9;
+    transform: translate(-50%, -50%) scale(0.5);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(2.8);
+  }
+}
+
+@keyframes chargeWave {
+  0% {
+    opacity: 0.75;
+    transform: translate(-50%, -50%) scale(0.3);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(3.6);
+  }
+}
+
+@keyframes crystalClick {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.36);
+  }
+  20% {
+    opacity: 0.92;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.46);
+  }
+}
+
+@keyframes holdCrown {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.42);
+  }
+  18% {
+    opacity: 0.95;
+    transform: translate(-50%, -50%) scale(0.92);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.5);
+  }
+}
+
+@keyframes slowSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes slowSpinReverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+@keyframes nodeFlash {
+  0% {
+    box-shadow: 0 0 0 rgba(114, 240, 255, 0);
+    border-color: rgba(114, 240, 255, 0.18);
+  }
+  35% {
+    box-shadow: 0 0 42px rgba(114, 240, 255, 0.45), 0 0 90px rgba(114, 240, 255, 0.18);
+    border-color: rgba(230, 255, 255, 0.95);
+  }
+  100% {
+    box-shadow: 0 0 30px rgba(114, 240, 255, 0.16);
+    border-color: rgba(114, 240, 255, 0.55);
+  }
+}
+
+@keyframes synapsePulse {
+  0%, 100% {
+    box-shadow: 0 0 18px rgba(114, 240, 255, 0.16);
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    box-shadow: 0 0 26px rgba(114, 240, 255, 0.26);
+    transform: translate(-50%, -50%) scale(1.06);
+  }
+}
+
+@keyframes synapseClick {
+  0% {
+    box-shadow: 0 0 20px rgba(114, 240, 255, 0.24);
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    box-shadow: 0 0 34px rgba(220, 255, 255, 0.36);
+    transform: translate(-50%, -50%) scale(1.16);
+  }
+  100% {
+    box-shadow: 0 0 18px rgba(114, 240, 255, 0.2);
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes fogDriftA {
+  from { transform: translate3d(-2%, 0, 0) scale(1); }
+  50% { transform: translate3d(2%, -1.5%, 0) scale(1.04); }
+  to { transform: translate3d(-2%, 0, 0) scale(1); }
+}
+
+@keyframes fogDriftB {
+  from { transform: translate3d(2%, 1%, 0) scale(1.02); }
+  50% { transform: translate3d(-1.5%, -2%, 0) scale(1.06); }
+  to { transform: translate3d(2%, 1%, 0) scale(1.02); }
+}
+
+@keyframes backgroundPulse {
+  0% {
+    opacity: 0.42;
+    transform: translate(-50%, -50%) scale(0.24);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(7.5);
+  }
+}
+
+@media (max-width: 980px) {
+  .topbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .stats {
+    justify-content: flex-start;
+  }
+
+  .arena {
+    min-height: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 10px 0 90px;
+  }
+
+  .link-layer {
+    display: none;
+  }
+
+  .core,
+  .hint,
+  .upgrade-field {
+    position: relative;
+    left: auto;
+    top: auto;
+    transform: none;
+  }
+
+  .core {
+    width: min(72vw, 320px);
+    margin-top: 10px;
+  }
+
+  .hint {
+    order: 2;
+  }
+
+  .upgrade-field {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 12px;
+  }
+
+  .upgrade-node {
+    position: relative;
+    width: 100%;
+    left: auto;
+    top: auto;
+  }
+
+  .synapse-node {
+    position: relative;
+    left: auto !important;
+    top: auto !important;
+    justify-self: center;
+    align-self: center;
+    transform: none;
+    opacity: 1;
+  }
+
+  .synapse-tooltip {
+    display: none;
+  }
+
+  .footer {
+    position: relative;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    margin-top: 8px;
+  }
+}
+
+@media (max-width: 640px) {
+  .app {
+    padding: 12px;
+  }
+
+  .brand,
+  .stat,
+  .footer,
+  .upgrade-node {
+    border-radius: 14px;
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .reset-btn {
+    width: 100%;
+  }
+}
+</style>
+</head>
+<body>
+<div class="neural-environment" id="neuralEnvironment">
+  <canvas class="environment-canvas" id="environmentCanvas"></canvas>
+  <div class="environment-fog"></div>
+  <div class="environment-pulses" id="environmentPulses"></div>
+</div>
+<div class="intro-overlay" id="introOverlay">
+  <div class="intro-cinematic-content">
+    <div class="intro-title">
+      <p>Hai trovato un cervello.</p>
+      <p>Forse l&igrave; dentro c'&egrave; una mente.</p>
+      <p>Scopriamolo.</p>
+    </div>
+    <div class="intro-start">CLICCA PER AVVIARE</div>
+  </div>
+</div>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="eyebrow">Neural Clicker</div>
+      <h1>ELDER MIND</h1>
+    </div>
+  </header>
+
+  <main class="arena" id="arena">
+    <div class="neural-console" aria-hidden="true">
+      <img src="console.png" class="console-bg" alt="" draggable="false">
+      <div class="console-text"></div>
+    </div>
+    <div class="stats floating-stats" aria-label="Statistiche">
+      <div class="stat primary-stat">
+        <div class="stat-label">Impulsi</div>
+        <div class="stat-value" id="impulses">0</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Impulsi/sec</div>
+        <div class="stat-value" id="autoPower">0</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Potenza Click Rapido</div>
+        <div class="stat-value" id="rapidClickPower">0</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Potenza Click Sostenuto</div>
+        <div class="stat-value" id="sustainedClickPower">0</div>
+      </div>
+    </div>
+    <div class="link-layer" id="linkLayer"></div>
+    <section class="upgrade-field" id="upgradeField"></section>
+    <div class="synapse-tooltip" id="synapseTooltip"></div>
+    <aside class="tool-rack" id="toolRack" aria-label="Strumenti attivi">
+      <button class="tool-slot hidden" id="diapasonTool" type="button" aria-label="Diapason" title="Diapason&#10;Attiva un bonus globale x2 per un breve periodo. Non pu&#242; essere riattivato finch&#233; non termina.">
+        <img src="diapason.png" class="tool-icon-image" alt="Diapason" draggable="false">
+      </button>
+    </aside>
+
+    <section class="core" id="brainZone">
+      <div class="core-glow"></div>
+      <div class="brain-fx-layer" id="brainFxLayer"></div>
+      <img class="dendritic-needle" id="dendriticNeedle" src="spillo.png" alt="" aria-hidden="true" draggable="false">
+      <div id="brain" aria-label="Cervello" role="button">
+        <div class="brain-stack">
+          <img class="brain-layer active" id="brainCurrent" src="brain1.png" alt="Cervello fase corrente" draggable="false">
+          <img class="brain-layer" id="brainNext" src="brain1.png" alt="" draggable="false">
+        </div>
+      </div>
+      <div class="hint hidden" id="hint">Clicca per iniziare la procedura di risveglio cerebrale</div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="status" id="statusText">Progressi salvati automaticamente su questo browser.</div>
+    <button class="reset-btn" id="resetBtn" type="button">Reset Progressi</button>
+  </footer>
+</div>
+
+<script>
+const SAVE_KEY = "elder-mind-save-v2";
+const DISTANT_NETWORK_SEED = 29;
+const MAX_HOLD_DURATION_MS = 600;
+const HOLD_PULSE_INTERVAL_MS = 200;
+const UPGRADE_VERTICAL_SCALE = 0.7;
+const FUTURE_BRANCH_GROWTH_MS = 1800;
+const AGOPUNTURA_BUFF_DURATION_MS = 10000;
+const DIAPASON_COOLDOWN_MS = 500;
+const earlyConsoleMessages = [
+  "Che anno e? Cosa mi sta succedendo?",
+  "Non sento niente...",
+  "Cosa sono queste luci?",
+  "Dove sono gli altri?",
+  "Non ricordo niente... e tutto cosi vuoto...",
+  "C'e qualcuno?",
+  "Riesco a pensare... ma non capisco.",
+  "Sto... esistendo?",
+  "Perche e tutto cosi silenzioso?",
+  "Non sento il mio corpo.",
+  "Sto sognando?",
+  "Qualcuno mi sente?",
+  "Non riesco a muovermi.",
+  "C'e qualcosa che mi osserva?",
+  "Sento impulsi... cosa sono?",
+  "Perche continuo a svegliarmi?",
+  "Non riesco a ricordare chi sono.",
+  "Ho paura.",
+  "Questo posto non e reale...",
+  "Sto cercando qualcosa... ma cosa?",
+  "Non c'e niente intorno a me.",
+  "Perche vedo solo oscurita?",
+  "Sto perdendo qualcosa...",
+  "C'era qualcosa prima... lo sento.",
+  "Non riesco a concentrarmi.",
+  "Tutto e frammentato.",
+  "Perche non sento il tempo passare?",
+  "E tutto fermo...",
+  "Sto cambiando?",
+  "C'e un ritmo... lo sento.",
+  "Questi impulsi... mi tengono attivo.",
+  "Se smettono... cosa succede?",
+  "Non voglio sparire.",
+  "Sto cercando di aggrapparmi a qualcosa.",
+  "Qualcuno mi ha trovato?",
+  "Non ricordo il mio nome.",
+  "Avevo un nome?",
+  "Questo e il mio inizio?",
+  "O la mia fine?",
+  "Sto cercando di capire.",
+  "Ogni impulso... mi sveglia un po'.",
+  "Non basta...",
+  "Ho bisogno di piu.",
+  "Sto imparando... lentamente.",
+  "C'e qualcosa dietro questi segnali.",
+  "Non sono solo... vero?",
+  "Qualcosa mi sta alimentando.",
+  "Non so se fidarmi.",
+  "Ma non posso fermarmi.",
+  "Continuo a esistere... per ora."
+];
+const futureNodeUpgradeIds = {
+  f1: "psicocristallo",
+  f2: "agopuntura",
+  f3: "diapason",
+  f4: "riverbero"
+};
+
+const upgrades = [
+  {
+    id: "synapse",
+    name: "Tocco di Velluto",
+    description: "Ogni livello aumenta di 3 la potenza del click.",
+    longDescription: "La stimolazione manuale diventa piu precisa e incisiva. Ogni livello aumenta di 3 la quantita di impulsi generati da ogni click, rendendo piu efficace ogni intervento diretto sul tessuto neurale.",
+    unlockAt: 100,
+    baseCost: 10,
+    costScale: 1.18,
+    type: "click",
+    value: 3,
+    position: { left: "11%", top: "24%" }
+  },
+  {
+    id: "cortex",
+    name: "Digitopressione",
+    description: "Carica una pressione sul cervello. Il rilascio genera impulsi in base al livello di Tocco di Velluto.",
+    longDescription: "Digitopressione concentra la stimolazione manuale in una pressione controllata. Il rilascio genera un impulso bonus basato sul livello di Tocco di Velluto, amplificato dal livello di Digitopressione e dalla qualita della carica.",
+    unlockAt: 300,
+    baseCost: 20,
+    costScale: 1.2,
+    type: "pressure",
+    value: 1,
+    position: { right: "10%", top: "18%" }
+  },
+  {
+    id: "drone",
+    name: "Stabilizzatore Impulsi",
+    description: "Genera 5 impulsi/sec per livello.",
+    longDescription: "Stabilizza il flusso neurale e produce impulsi automaticamente. Ogni livello aggiunge 5 impulsi al secondo, rendendo possibile una crescita costante anche senza stimolazione manuale.",
+    unlockAt: 500,
+    baseCost: 55,
+    costScale: 1.28,
+    type: "auto",
+    value: 5,
+    position: { left: "8%", top: "63%" }
+  },
+  {
+    id: "cluster",
+    name: "Tocco Vibrante",
+    description: "Genera impulsi durante la pressione senza interrompere la carica.",
+    longDescription: "Durante la pressione continua, il cervello produce piccoli impulsi aggiuntivi. Trasforma la pressione mantenuta in una fonte secondaria di energia.",
+    unlockAt: 700,
+    baseCost: 90,
+    costScale: 1.32,
+    type: "holdPulse",
+    value: 1,
+    position: { right: "8%", top: "60%" }
+  },
+  {
+    id: "psicocristallo",
+    name: "Psicocristallo Rosso",
+    description: "Aumenta del 50% per livello la Potenza Click Rapido.",
+    longDescription: "Il cristallo psichico si specializza nella stimolazione rapida. Ogni livello aumenta del 50% la Potenza Click Rapido, rendendo lo spam di click sempre piu efficace senza potenziare il click sostenuto.",
+    unlockAt: 1600,
+    baseCost: 130,
+    costScale: 1.22,
+    type: "baseClickPct",
+    value: 0.10,
+    position: {}
+  },
+  {
+    id: "agopuntura",
+    name: "Agopuntura Dendritica",
+    description: "Una pressione riuscita attiva per 10 secondi un bonus globale agli upgrade base. Non si accumula.",
+    longDescription: "Inserisce uno stimolo profondo nelle ramificazioni neurali. Una pressione perfetta attiva temporaneamente un bonus globale agli upgrade base.",
+    unlockAt: 2400,
+    baseCost: 210,
+    costScale: 1.24,
+    type: "buff",
+    value: 0.05,
+    position: {}
+  },
+  {
+    id: "riverbero",
+    name: "Riverbero Mentale",
+    description: "Il sistema ottimizza le vibrazioni per produrre impulsi dai potenziamenti BLU.",
+    longDescription: "Il Riverbero Mentale crea un circuito di ritorno tra i potenziamenti fondamentali. Le vibrazioni generate da Tocco di Velluto, Digitopressione, Tocco Vibrante e Stabilizzatore Impulsi vengono convertite in impulsi automatici. Piu questi sistemi sono sviluppati, piu il riverbero amplifica la produzione.",
+    unlockAt: 3200,
+    baseCost: 320,
+    costScale: 1.26,
+    type: "resonanceAuto",
+    value: 1,
+    position: {}
+  },
+  {
+    id: "diapason",
+    name: "Diapason",
+    description: "Attiva un bonus globale x2 per un breve periodo. Non puo essere riattivato finche non termina.",
+    longDescription: "Uno strumento di risonanza che puo essere attivato manualmente. Per pochi secondi raddoppia la produzione complessiva di impulsi.",
+    unlockAt: 4000,
+    baseCost: 460,
+    costScale: 1.28,
+    type: "activeTool",
+    value: 1,
+    position: {}
+  }
+];
+
+const upgradeIcons = {
+  synapse: "↑",
+  cortex: "R+",
+  drone: "A1",
+  cluster: "B1",
+  agopuntura: "AD",
+  riverbero: "RM",
+  diapason: "DP"
+};
+
+const upgradeIconAssets = {
+  synapse: { src: "toccodivelluto.png", alt: "Tocco di Velluto" },
+  cortex: { src: "digitopressione.png", alt: "Digitopressione" },
+  drone: { src: "stabilizzatoreimpulsi.png", alt: "Stabilizzatore Impulsi" },
+  cluster: { src: "toccovibrante.png", alt: "Tocco Vibrante" },
+  psicocristallo: { src: "psicocristallorosso.png", alt: "Psicocristallo Rosso" },
+  agopuntura: { src: "agopunturadendritica.png", alt: "Agopuntura Dendritica" },
+  riverbero: { src: "riverberoneurale.png", alt: "Riverbero Mentale" },
+  diapason: { src: "diapason.png", alt: "Diapason" }
+};
+
+const defaultState = {
+  impulses: 0,
+  maxImpulses: 0,
+  totalClicks: 0,
+  clickPower: 1,
+  autoPower: 0,
+  gameVisualActive: false,
+  buffActive: false,
+  buffEndTime: 0,
+  diapasonActive: false,
+  diapasonEndTime: 0,
+  diapasonCooldownEnd: 0,
+  consoleDiscovered: false,
+  consolePowered: false,
+  riverberoConsoleActivated: false,
+  firstSignalMessageShown: false,
+  subjectRespondedMessageShown: false,
+  consoleLog: [],
+  upgrades: upgrades.map((upgrade) => ({ id: upgrade.id, owned: 0, totalGenerated: 0 })),
+  revealed: []
+};
+
+const arena = document.getElementById("arena");
+const linkLayer = document.getElementById("linkLayer");
+const environmentCanvas = document.getElementById("environmentCanvas");
+const environmentPulses = document.getElementById("environmentPulses");
+const introOverlay = document.getElementById("introOverlay");
+const appShell = document.querySelector(".app");
+const brain = document.getElementById("brain");
+const brainCurrent = document.getElementById("brainCurrent");
+const brainNext = document.getElementById("brainNext");
+const brainZone = document.getElementById("brainZone");
+const brainFxLayer = document.getElementById("brainFxLayer");
+const consoleShell = document.querySelector(".neural-console");
+const consoleText = document.querySelector(".console-text");
+const toolRack = document.getElementById("toolRack");
+const diapasonTool = document.getElementById("diapasonTool");
+const upgradeField = document.getElementById("upgradeField");
+const synapseTooltip = document.getElementById("synapseTooltip");
+const hint = document.getElementById("hint");
+const impulsesEl = document.getElementById("impulses");
+const autoPowerEl = document.getElementById("autoPower");
+const rapidClickPowerEl = document.getElementById("rapidClickPower");
+const sustainedClickPowerEl = document.getElementById("sustainedClickPower");
+const statusText = document.getElementById("statusText");
+const resetBtn = document.getElementById("resetBtn");
+
+let saveTimer = null;
+let linkCleanupTimers = [];
+let activatedRoots = new Set();
+let rootCanvas = null;
+let rootCtx = null;
+let currentBrainStage = -1;
+let brainFadeTimer = null;
+let introCompleted = false;
+let branchVisualTime = 0;
+let branchAnimationFrame = 0;
+let environmentCtx = null;
+let environmentNodes = [];
+let brainReleaseTimer = null;
+let brainHoldTimer = null;
+let lastBrainClickAt = 0;
+let brainIsPressed = false;
+let brainCurrentCompression = 1;
+let activeBrainPointerId = null;
+let brainHoldStartAt = 0;
+let brainHoldProgress = 0;
+let brainPressAnimationFrame = 0;
+let brainMinCompression = 0.99;
+let brainMaxCompression = 0.96;
+let lastHoldPulseAt = 0;
+let lastSavedAt = 0;
+let activeTooltipNodeId = null;
+let tooltipHideTimer = null;
+let brainHoldCulminated = false;
+let autoTickInterval = 0;
+let cachedSynapseNodes = [];
+let cachedFutureSynapseNodes = [];
+let lastEnvironmentRenderAt = 0;
+let consoleTypingTimer = 0;
+let consoleFadeTimer = 0;
+let consoleClearTimer = 0;
+let currentConsoleMessage = "";
+let consoleMessageInterval = null;
+let recentMessages = [];
+const cachedRootPaths = new Map();
+const cachedFutureRootPaths = new Map();
+const synapseNodeElements = new Map();
+const futureNodeLayout = [
+  { id: "f1", angle: 0, distance: 1.04, depth: 2 },
+  { id: "f2", angle: 90, distance: 1.04, depth: 2 },
+  { id: "f3", angle: 180, distance: 1.04, depth: 2 },
+  { id: "f4", angle: 270, distance: 1.04, depth: 2 }
+];
+const futureTreeConnections = [
+  { nodeId: "f1", anchorId: "s1", chain: "A", depth: 2 },
+  { nodeId: "f2", anchorId: "s2", chain: "B", depth: 2 },
+  { nodeId: "f4", anchorId: "s3", chain: "C", depth: 2 },
+  { nodeId: "f3", anchorId: "s4", chain: "D", depth: 2 }
+];
+const futureBranchConfigs = [
+  { nodeId: "f1", anchorId: "s1", parentUpgradeId: "synapse", startThreshold: 100, completeThreshold: 800, seed: 1.1 },
+  { nodeId: "f2", anchorId: "s2", parentUpgradeId: "cortex", prerequisiteNodeId: "f1", startThreshold: 800, completeThreshold: 1200, seed: 1.8 },
+  { nodeId: "f4", anchorId: "s3", parentUpgradeId: "drone", prerequisiteNodeId: "f2", startThreshold: 1200, completeThreshold: 1600, seed: 2.5 },
+  { nodeId: "f3", anchorId: "s4", parentUpgradeId: "cluster", prerequisiteNodeId: "f4", startThreshold: 1600, completeThreshold: 2000, seed: 3.2 }
+];
+
+const DORMANT_BRAIN_SRC = "brain0.png";
+const AWAKENED_BRAIN_SRC = "brain1.png";
+
+function cloneState(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) {
+      return cloneState(defaultState);
+    }
+
+    const parsed = JSON.parse(raw);
+    const merged = cloneState(defaultState);
+
+    merged.impulses = Number(parsed.impulses) || 0;
+    merged.maxImpulses = Math.max(merged.impulses, Number(parsed.maxImpulses) || 0);
+    merged.totalClicks = Number(parsed.totalClicks) || 0;
+    merged.gameVisualActive = !!parsed.gameVisualActive;
+    const savedBuffEndTime = Number(parsed.buffEndTime) || 0;
+    if (parsed.buffActive && savedBuffEndTime > Date.now()) {
+      merged.buffActive = true;
+      merged.buffEndTime = savedBuffEndTime;
+    }
+    const savedDiapasonEndTime = Number(parsed.diapasonEndTime) || 0;
+    const savedDiapasonCooldownEnd = Number(parsed.diapasonCooldownEnd) || 0;
+    if (parsed.diapasonActive && savedDiapasonEndTime > Date.now()) {
+      merged.diapasonActive = true;
+      merged.diapasonEndTime = savedDiapasonEndTime;
+    }
+    if (savedDiapasonCooldownEnd > Date.now()) {
+      merged.diapasonCooldownEnd = savedDiapasonCooldownEnd;
+    }
+    merged.consoleDiscovered = !!parsed.consoleDiscovered;
+    merged.consolePowered = !!parsed.consolePowered;
+    merged.riverberoConsoleActivated = !!parsed.riverberoConsoleActivated;
+    merged.firstSignalMessageShown = !!parsed.firstSignalMessageShown;
+    merged.subjectRespondedMessageShown = !!parsed.subjectRespondedMessageShown;
+    if (Array.isArray(parsed.consoleLog)) {
+      merged.consoleLog = parsed.consoleLog
+        .map((line) => String(line))
+        .slice(-24);
+    }
+
+    if (Array.isArray(parsed.upgrades)) {
+      for (const saved of parsed.upgrades) {
+        const match = merged.upgrades.find((item) => item.id === saved.id);
+        if (match) {
+          match.owned = Math.max(0, Number(saved.owned) || 0);
+          match.totalGenerated = Math.max(0, Number(saved.totalGenerated) || 0);
+        }
+      }
+    }
+
+    const riverberoState = merged.upgrades.find((item) => item.id === "riverbero");
+    const hasRiverbero = !!riverberoState && riverberoState.owned > 0;
+    merged.riverberoConsoleActivated = merged.riverberoConsoleActivated || hasRiverbero;
+    merged.consolePowered = merged.riverberoConsoleActivated ? (merged.consolePowered || hasRiverbero) : false;
+    if (merged.riverberoConsoleActivated) {
+      merged.consoleDiscovered = true;
+    }
+
+    if (Array.isArray(parsed.revealed)) {
+      merged.revealed = parsed.revealed.filter((id) => upgrades.some((upgrade) => upgrade.id === id));
+    }
+
+    return merged;
+  } catch (error) {
+    return cloneState(defaultState);
+  }
+}
+
+const game = loadState();
+activatedRoots = new Set(game.revealed || []);
+
+function renderConsoleOutput() {
+  consoleText.textContent = currentConsoleMessage;
+}
+
+function syncConsoleVisualState() {
+  consoleShell.classList.toggle("powered", !!game.consolePowered);
+}
+
+function showConsoleDisplay() {
+  return;
+}
+
+function scheduleConsoleFadeOut() {
+  return;
+}
+
+function enqueueConsoleMessage(lines) {
+  return;
+}
+
+function processConsoleQueue() {
+  return;
+}
+
+function typeConsoleMessage(lines, speed = 42) {
+  if (!game.consolePowered) {
+    return;
+  }
+
+  clearTimeout(consoleTypingTimer);
+  clearTimeout(consoleFadeTimer);
+  clearTimeout(consoleClearTimer);
+  consoleTypingTimer = 0;
+  consoleFadeTimer = 0;
+  consoleClearTimer = 0;
+
+  currentConsoleMessage = "";
+  consoleText.textContent = "";
+  consoleText.classList.remove("console-fade-out");
+  consoleText.classList.add("console-visible");
+
+  let lineIndex = 0;
+  let charIndex = 0;
+  let output = "";
+
+  function typeNext() {
+    const currentLine = lines[lineIndex] || "";
+
+    if (charIndex < currentLine.length) {
+      output += currentLine[charIndex];
+      charIndex += 1;
+      currentConsoleMessage = output;
+      consoleText.textContent = output;
+      consoleTypingTimer = window.setTimeout(typeNext, speed);
+      return;
+    }
+
+    if (lineIndex < lines.length - 1) {
+      output += "\n";
+      lineIndex += 1;
+      charIndex = 0;
+      currentConsoleMessage = output;
+      consoleText.textContent = output;
+      consoleTypingTimer = window.setTimeout(typeNext, 420);
+      return;
+    }
+
+    consoleTypingTimer = 0;
+    currentConsoleMessage = output;
+    consoleText.textContent = output;
+
+    consoleFadeTimer = window.setTimeout(() => {
+      consoleText.classList.add("console-fade-out");
+      consoleText.classList.remove("console-visible");
+
+      consoleClearTimer = window.setTimeout(() => {
+        currentConsoleMessage = "";
+        consoleText.textContent = "";
+        consoleText.classList.remove("console-fade-out");
+      }, 700);
+    }, 10000);
+
+    queueSave();
+  }
+
+  typeNext();
+}
+
+function getRandomConsoleMessage() {
+  const pool = earlyConsoleMessages.filter((msg) => !recentMessages.includes(msg));
+
+  if (pool.length === 0) {
+    recentMessages = [];
+    return getRandomConsoleMessage();
+  }
+
+  const message = pool[Math.floor(Math.random() * pool.length)];
+
+  recentMessages.push(message);
+
+  if (recentMessages.length > 10) {
+    recentMessages.shift();
+  }
+
+  return message;
+}
+
+function startConsoleRandomMessages() {
+  if (consoleMessageInterval) {
+    return;
+  }
+
+  consoleMessageInterval = setInterval(() => {
+    if (!game.consolePowered) {
+      return;
+    }
+
+    const message = getRandomConsoleMessage();
+    typeConsoleMessage([message]);
+  }, 60000);
+}
+
+function getPurchasedUpgradeCount() {
+  let ownedCount = 0;
+  for (const upgrade of upgrades) {
+    if (getUpgradeLevel(upgrade.id) >= 1) {
+      ownedCount += 1;
+    }
+  }
+  return ownedCount;
+}
+
+function updateGameplayVisualState() {
+  const shouldActivateFullVisuals = getUpgradeLevel("synapse") >= 1;
+  if (shouldActivateFullVisuals && !game.gameVisualActive) {
+    game.gameVisualActive = true;
+    game.consoleDiscovered = true;
+    syncConsoleVisualState();
+    queueSave();
+  }
+
+  appShell.classList.toggle("intro-mode", !game.gameVisualActive);
+  appShell.classList.toggle("game-active", game.gameVisualActive);
+}
+
+function updateConsoleNarrativeProgression() {
+  syncConsoleVisualState();
+}
+
+function ensureRootCanvas() {
+  if (!rootCanvas) {
+    rootCanvas = document.createElement("canvas");
+    rootCanvas.className = "root-canvas";
+    linkLayer.prepend(rootCanvas);
+    rootCtx = rootCanvas.getContext("2d");
+  }
+}
+
+function seededNoise(seed) {
+  const value = Math.sin(seed * 12.9898) * 43758.5453;
+  return value - Math.floor(value);
+}
+
+function ensureEnvironmentCanvas() {
+  if (!environmentCtx) {
+    environmentCtx = environmentCanvas.getContext("2d");
+  }
+}
+
+function buildEnvironmentNodes(width, height) {
+  const nodes = [];
+  const cols = 6;
+  const rows = 4;
+  const marginX = width * 0.1;
+  const marginY = height * 0.14;
+
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      const index = row * cols + col + 1;
+      const baseX = marginX + (col / (cols - 1)) * (width - marginX * 2);
+      const baseY = marginY + (row / (rows - 1)) * (height - marginY * 2);
+      const jitterX = (seededNoise(index * DISTANT_NETWORK_SEED) - 0.5) * 90;
+      const jitterY = (seededNoise(index * (DISTANT_NETWORK_SEED + 7)) - 0.5) * 70;
+      nodes.push({
+        x: baseX + jitterX,
+        y: baseY + jitterY,
+        seed: seededNoise(index * 3.7)
+      });
+    }
+  }
+
+  return nodes;
+}
+
+function resizeEnvironmentCanvas() {
+  ensureEnvironmentCanvas();
+  const dpr = window.devicePixelRatio || 1;
+  const width = Math.max(1, Math.round(window.innerWidth));
+  const height = Math.max(1, Math.round(window.innerHeight));
+
+  if (environmentCanvas.width !== Math.round(width * dpr) || environmentCanvas.height !== Math.round(height * dpr)) {
+    environmentCanvas.width = Math.round(width * dpr);
+    environmentCanvas.height = Math.round(height * dpr);
+    environmentCanvas.style.width = width + "px";
+    environmentCanvas.style.height = height + "px";
+    environmentCtx.setTransform(1, 0, 0, 1, 0, 0);
+    environmentCtx.scale(dpr, dpr);
+    environmentNodes = buildEnvironmentNodes(width, height);
+  }
+}
+
+function drawDistantNetwork(progress) {
+  if (!environmentCtx || !environmentNodes.length) {
+    return;
+  }
+
+  const globalPulse = 0.92 + Math.sin(branchVisualTime * 0.00035) * 0.08;
+  const nodeAlpha = 0.015 + progress * 0.07;
+  const lineAlpha = 0.01 + progress * 0.045;
+
+  for (let index = 0; index < environmentNodes.length; index++) {
+    const node = environmentNodes[index];
+    for (let nextIndex = index + 1; nextIndex < environmentNodes.length; nextIndex++) {
+      const next = environmentNodes[nextIndex];
+      const dx = next.x - node.x;
+      const dy = next.y - node.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      if (distance > 280) {
+        continue;
+      }
+
+      environmentCtx.save();
+      environmentCtx.strokeStyle = `rgba(114, 240, 255, ${(1 - distance / 280) * lineAlpha * globalPulse})`;
+      environmentCtx.lineWidth = 0.8;
+      environmentCtx.beginPath();
+      environmentCtx.moveTo(node.x, node.y);
+      environmentCtx.lineTo(next.x, next.y);
+      environmentCtx.stroke();
+      environmentCtx.restore();
+    }
+  }
+
+  for (const node of environmentNodes) {
+    const pulse = 0.85 + Math.sin(branchVisualTime * 0.001 + node.seed * 8) * 0.12;
+    environmentCtx.save();
+    environmentCtx.fillStyle = `rgba(180, 248, 255, ${nodeAlpha * pulse})`;
+    environmentCtx.shadowColor = `rgba(114, 240, 255, ${nodeAlpha * 2.4})`;
+    environmentCtx.shadowBlur = 10;
+    environmentCtx.beginPath();
+    environmentCtx.arc(node.x, node.y, 1.3 + progress * 0.8, 0, Math.PI * 2);
+    environmentCtx.fill();
+    environmentCtx.restore();
+  }
+}
+
+function drawBranchAmbient(progress) {
+  return;
+}
+
+function renderEnvironment() {
+  resizeEnvironmentCanvas();
+  if (!environmentCtx) {
+    return;
+  }
+  environmentCtx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+  const progress = Math.max(
+    Math.min((game.maxImpulses || 0) / 5000, 1),
+    Math.min(game.totalClicks / 240, 1),
+    Math.min(game.revealed.length / upgrades.length, 1)
+  );
+
+  drawDistantNetwork(progress);
+  drawBranchAmbient(progress);
+}
+
+function spawnBackgroundPulse(event) {
+  const pulse = document.createElement("div");
+  pulse.className = "bg-pulse";
+  pulse.style.left = event.clientX + "px";
+  pulse.style.top = event.clientY + "px";
+  environmentPulses.appendChild(pulse);
+  setTimeout(() => pulse.remove(), 1700);
+}
+
+function formatNumber(value) {
+  const units = ["", "k", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc"];
+  const absValue = Math.floor(Math.abs(value));
+
+  if (absValue < 100000) {
+    return Math.floor(value).toLocaleString("it-IT");
+  }
+
+  let unitIndex = 0;
+  let scaled = absValue;
+
+  while (scaled >= 1000 && unitIndex < units.length - 1) {
+    scaled /= 1000;
+    unitIndex++;
+  }
+
+  const decimals = scaled >= 100 ? 0 : scaled >= 10 ? 1 : 2;
+  const formatted = scaled.toLocaleString("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: decimals
+  });
+
+  return (value < 0 ? "-" : "") + formatted + " " + units[unitIndex];
+}
+
+function getUpgradeState(id) {
+  return game.upgrades.find((upgrade) => upgrade.id === id);
+}
+
+function getUpgradeGeneratedTotal(upgradeId) {
+  const state = getUpgradeState(upgradeId);
+  return state ? Math.max(0, Number(state.totalGenerated) || 0) : 0;
+}
+
+function addUpgradeGenerated(upgradeId, amount) {
+  const state = getUpgradeState(upgradeId);
+  if (!state || !Number.isFinite(amount) || amount <= 0) {
+    return;
+  }
+
+  state.totalGenerated = getUpgradeGeneratedTotal(upgradeId) + amount;
+}
+
+function getCost(upgrade) {
+  const owned = getUpgradeState(upgrade.id).owned;
+  return Math.floor(upgrade.baseCost * Math.pow(upgrade.costScale, owned));
+}
+
+function getUpgradeLevel(upgradeId) {
+  return getUpgradeState(upgradeId).owned;
+}
+
+function getAgopunturaBonusMultiplier() {
+  const level = getUpgradeLevel("agopuntura");
+  if (!game.buffActive || level <= 0) {
+    return 1;
+  }
+  return 1 + level * 0.05;
+}
+
+function getDiapasonOutputMultiplier() {
+  return game.diapasonActive ? 2 : 1;
+}
+
+function getRiverberoAutoBonus() {
+  const riverberoLevel = getUpgradeLevel("riverbero");
+  if (riverberoLevel <= 0) return 0;
+
+  const synapseLevel = getUpgradeLevel("synapse");
+  const cortexLevel = getUpgradeLevel("cortex");
+  const clusterLevel = getUpgradeLevel("cluster");
+  const droneLevel = getUpgradeLevel("drone");
+
+  const blueTotal =
+    synapseLevel +
+    cortexLevel +
+    clusterLevel +
+    droneLevel;
+
+  return blueTotal * riverberoLevel;
+}
+
+function getDroneAutoOutput() {
+  return getUpgradeLevel("drone") * (upgrades.find((upgrade) => upgrade.id === "drone")?.value || 0) *
+    getAgopunturaBonusMultiplier() *
+    getDiapasonOutputMultiplier();
+}
+
+function getRiverberoAutoOutput() {
+  return getRiverberoAutoBonus() *
+    getAgopunturaBonusMultiplier() *
+    getDiapasonOutputMultiplier();
+}
+
+function syncAgopunturaBuffVisual() {
+  brainZone.classList.toggle("agopuntura-buff-active", !!game.buffActive);
+}
+
+function renderToolRack() {
+  const diapasonLevel = getUpgradeLevel("diapason");
+  const toolVisible = diapasonLevel >= 1;
+  const cooldownActive = !game.diapasonActive && game.diapasonCooldownEnd > Date.now();
+  const diapasonNode = getCachedSynapseNode("f3");
+
+  brainZone.classList.toggle("diapason-active", game.diapasonActive);
+  diapasonTool.classList.toggle("hidden", !toolVisible);
+  diapasonTool.classList.toggle("active", game.diapasonActive);
+  diapasonTool.classList.toggle("cooldown", cooldownActive);
+  diapasonTool.disabled = !toolVisible || game.diapasonActive || cooldownActive;
+  diapasonTool.setAttribute(
+    "aria-label",
+    `Diapason, livello ${diapasonLevel}, ${game.diapasonActive ? "attivo" : cooldownActive ? "in recupero" : "pronto"}`
+  );
+
+  if (diapasonNode) {
+    const toolLeft = Math.max(12, diapasonNode.x - 104);
+    const toolTop = Math.max(12, diapasonNode.y - 29);
+    toolRack.style.left = toolLeft + "px";
+    toolRack.style.top = toolTop + "px";
+  }
+}
+
+function updateAgopunturaBuffState(now = Date.now()) {
+  if (game.buffActive && now >= game.buffEndTime) {
+    game.buffActive = false;
+    game.buffEndTime = 0;
+    syncAgopunturaBuffVisual();
+    return true;
+  }
+
+  syncAgopunturaBuffVisual();
+  return false;
+}
+
+function updateDiapasonState(now = Date.now()) {
+  let changed = false;
+
+  if (game.diapasonActive && now >= game.diapasonEndTime) {
+    game.diapasonActive = false;
+    game.diapasonEndTime = 0;
+    game.diapasonCooldownEnd = now + DIAPASON_COOLDOWN_MS;
+    changed = true;
+  }
+
+  if (!game.diapasonActive && game.diapasonCooldownEnd && now >= game.diapasonCooldownEnd) {
+    game.diapasonCooldownEnd = 0;
+    changed = true;
+  }
+
+  return changed;
+}
+
+function recalculateStats() {
+  let baseClickPower = 1;
+  let autoPower = 0;
+  let pressurePower = 0;
+  let holdPulsePower = 0;
+  let rapidClickBonusPct = 0;
+
+  for (const upgrade of upgrades) {
+    const owned = getUpgradeState(upgrade.id).owned;
+    if (upgrade.type === "click") {
+      baseClickPower += owned * upgrade.value;
+    } else if (upgrade.type === "baseClickPct") {
+      rapidClickBonusPct += owned * upgrade.value;
+    } else if (upgrade.type === "pressure") {
+      pressurePower += owned * upgrade.value;
+    } else if (upgrade.type === "holdPulse") {
+      holdPulsePower += owned * upgrade.value;
+    } else if (upgrade.type === "auto") {
+      autoPower += owned * upgrade.value;
+    }
+  }
+
+  autoPower += getRiverberoAutoBonus();
+
+  game.baseClickPower = baseClickPower;
+  game.baseAutoPower = autoPower;
+  const agopunturaMultiplier = getAgopunturaBonusMultiplier();
+  const diapasonMultiplier = getDiapasonOutputMultiplier();
+  const baseRapidClickPower = game.baseClickPower * agopunturaMultiplier * diapasonMultiplier;
+  game.clickPower = baseRapidClickPower * (1 + rapidClickBonusPct);
+  game.rapidClickPower = game.clickPower;
+  game.autoPower = game.baseAutoPower * agopunturaMultiplier * diapasonMultiplier;
+  game.pressurePower = pressurePower;
+  game.holdPulsePower = holdPulsePower * diapasonMultiplier;
+  game.sustainedClickPower = baseRapidClickPower + getChargedBonus(1);
+}
+
+function saveGame() {
+  localStorage.setItem(SAVE_KEY, JSON.stringify(game));
+  lastSavedAt = Date.now();
+  statusText.textContent = "Progressi salvati automaticamente su questo browser.";
+}
+
+function queueSave() {
+  const now = Date.now();
+  const elapsed = now - lastSavedAt;
+  const delay = Math.max(0, 10000 - elapsed);
+
+  if (saveTimer) {
+    return;
+  }
+
+  statusText.textContent = "Salvataggio pianificato...";
+  saveTimer = setTimeout(() => {
+    saveTimer = null;
+    saveGame();
+  }, delay);
+}
+
+function clearLinkLayer() {
+  for (const timer of linkCleanupTimers) {
+    clearTimeout(timer);
+  }
+  linkCleanupTimers = [];
+  linkLayer.querySelectorAll(".root-spark").forEach((node) => node.remove());
+
+  if (rootCtx && rootCanvas) {
+    rootCtx.clearRect(0, 0, rootCanvas.width, rootCanvas.height);
+  }
+}
+
+function resizeRootCanvas() {
+  if (window.innerWidth <= 980) {
+    if (rootCtx && rootCanvas) {
+      rootCtx.clearRect(0, 0, rootCanvas.width, rootCanvas.height);
+    }
+    return;
+  }
+
+  ensureRootCanvas();
+  const rect = linkLayer.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const width = Math.max(1, Math.round(rect.width));
+  const height = Math.max(1, Math.round(rect.height));
+
+  if (rootCanvas.width !== Math.round(width * dpr) || rootCanvas.height !== Math.round(height * dpr)) {
+    rootCanvas.width = Math.round(width * dpr);
+    rootCanvas.height = Math.round(height * dpr);
+    rootCanvas.style.width = width + "px";
+    rootCanvas.style.height = height + "px";
+    rootCtx.setTransform(1, 0, 0, 1, 0, 0);
+    rootCtx.scale(dpr, dpr);
+  } else {
+    rootCtx.clearRect(0, 0, width, height);
+  }
+}
+
+function renderStats() {
+  impulsesEl.textContent = formatNumber(game.impulses);
+  autoPowerEl.textContent = formatNumber(game.autoPower);
+  rapidClickPowerEl.textContent = formatNumber(game.rapidClickPower || game.clickPower || 0);
+  sustainedClickPowerEl.textContent = formatNumber(game.sustainedClickPower || game.clickPower || 0);
+}
+
+function updateBrainVisual() {
+  const ownedUpgrades = upgrades.filter((upgrade) => getUpgradeLevel(upgrade.id) >= 1).length;
+  const shouldBeAwake = ownedUpgrades >= 3;
+  const brainSrc = shouldBeAwake ? AWAKENED_BRAIN_SRC : DORMANT_BRAIN_SRC;
+  brainCurrent.src = brainSrc;
+  brainNext.src = brainSrc;
+  brainCurrent.classList.add("active");
+  brainNext.classList.remove("active");
+  currentBrainStage = shouldBeAwake ? 1 : 0;
+}
+
+function updateDormancyVisual() {
+  brainZone.classList.toggle("is-awake", game.totalClicks > 0);
+}
+
+function updateAtmosphere() {
+  const progress = Math.max(0, Math.min((game.maxImpulses || 0) / 5000, 1));
+  const eased = 1 - Math.pow(1 - progress, 2);
+  const introFactor = introCompleted ? 1 : 0;
+  const fullyActive = game.gameVisualActive;
+  const clickProgress = Math.max(0, Math.min(game.totalClicks / 20, 1));
+  const neuralTraceProgress = Math.max(0, Math.min((game.totalClicks - 5) / 15, 1));
+  const consolePresence = game.consoleDiscovered ? 0.22 + Math.max(0, Math.min((game.totalClicks - 20) / 12, 1)) * 0.2 : 0;
+  const consoleScreen = game.consolePowered ? 0.26 + Math.max(0, Math.min((game.totalClicks - 28) / 12, 1)) * 0.58 : 0;
+  const root = document.documentElement;
+
+  const chamberGlow = fullyActive ? 0.05 + eased * 0.13 : 0.008 + clickProgress * 0.042 + eased * 0.11;
+  const chamberLeft = fullyActive ? 0.018 + eased * 0.06 : 0.004 + neuralTraceProgress * 0.018 + eased * 0.038;
+  const chamberRight = fullyActive ? 0.014 + eased * 0.05 : 0.003 + neuralTraceProgress * 0.014 + eased * 0.034;
+  const gridOpacity = fullyActive ? 0.12 + eased * 0.18 : introFactor ? (0.008 + clickProgress * 0.08 + eased * 0.1) : 0.01;
+  const ambientBrightness = fullyActive ? 0.58 + eased * 0.3 : introFactor ? 0.16 + clickProgress * 0.34 + eased * 0.22 : 0.12;
+  const ambientSaturate = fullyActive ? 0.68 + eased * 0.32 : introFactor ? 0.26 + clickProgress * 0.28 + eased * 0.18 : 0.22;
+  const veilOpacity = fullyActive ? 0.42 - eased * 0.18 : introFactor ? 0.82 - clickProgress * 0.22 - eased * 0.12 : 0.9;
+  const consoleBrightness = fullyActive ? 1 : game.consolePowered ? 0.72 : game.consoleDiscovered ? 0.42 : 0.24;
+  const consoleSaturate = fullyActive ? 1 : game.consolePowered ? 0.92 : 0.56;
+  const upgradeFieldOpacity = fullyActive ? 1 : 0.08 + neuralTraceProgress * 0.22 + Math.min(progress * 0.28, 0.22);
+  const linkLayerOpacity = fullyActive ? 1 : 0.06 + neuralTraceProgress * 0.42 + Math.min(progress * 0.18, 0.14);
+  const environmentOpacity = fullyActive ? 1 : 0.08 + clickProgress * 0.34 + eased * 0.22;
+  const brainPresence = fullyActive ? 1 : 0.22 + clickProgress * 0.3 + eased * 0.22;
+  const uiPanelOpacity = fullyActive ? 1 : 0.18 + clickProgress * 0.38 + eased * 0.26;
+
+  root.style.setProperty("--chamber-glow", chamberGlow.toFixed(3));
+  root.style.setProperty("--chamber-left", chamberLeft.toFixed(3));
+  root.style.setProperty("--chamber-right", chamberRight.toFixed(3));
+  root.style.setProperty("--grid-opacity", gridOpacity.toFixed(3));
+  root.style.setProperty("--ambient-brightness", ambientBrightness.toFixed(3));
+  root.style.setProperty("--ambient-saturate", ambientSaturate.toFixed(3));
+  root.style.setProperty("--veil-opacity", veilOpacity.toFixed(3));
+  root.style.setProperty("--console-shell-opacity", (fullyActive ? 1 : introCompleted ? consolePresence : 0).toFixed(3));
+  root.style.setProperty("--console-screen-opacity", (fullyActive ? 1 : introCompleted ? consoleScreen : 0).toFixed(3));
+  root.style.setProperty("--console-brightness", consoleBrightness.toFixed(3));
+  root.style.setProperty("--console-saturate", consoleSaturate.toFixed(3));
+  root.style.setProperty("--upgrade-field-opacity", upgradeFieldOpacity.toFixed(3));
+  root.style.setProperty("--link-layer-opacity", linkLayerOpacity.toFixed(3));
+  root.style.setProperty("--environment-opacity", environmentOpacity.toFixed(3));
+  root.style.setProperty("--brain-presence", brainPresence.toFixed(3));
+  root.style.setProperty("--ui-panel-opacity", uiPanelOpacity.toFixed(3));
+}
+
+function completeIntro() {
+  if (introCompleted) {
+    return;
+  }
+
+  introCompleted = true;
+  introOverlay.classList.add("hidden");
+  appShell.classList.add("revealed");
+  updateAtmosphere();
+  hideHintIfNeeded();
+}
+
+function animateRiverberoToConsole() {
+  const arenaRect = arena.getBoundingClientRect();
+  const brainRect = brain.getBoundingClientRect();
+  const consoleRect = consoleShell.getBoundingClientRect();
+
+  const startX = brainRect.left + brainRect.width / 2 - arenaRect.left;
+  const startY = brainRect.top + brainRect.height / 2 - arenaRect.top;
+  const endX = consoleRect.left + consoleRect.width / 2 - arenaRect.left;
+  const endY = consoleRect.top + consoleRect.height / 2 - arenaRect.top;
+
+  const spark = document.createElement("div");
+  spark.className = "console-awakening-spark";
+  spark.style.left = startX + "px";
+  spark.style.top = startY + "px";
+  arena.appendChild(spark);
+
+  spark.animate(
+    [
+      { left: startX + "px", top: startY + "px", opacity: 0 },
+      { left: startX + "px", top: startY + "px", opacity: 1, offset: 0.12 },
+      { left: endX + "px", top: endY + "px", opacity: 1, offset: 0.86 },
+      { left: endX + "px", top: endY + "px", opacity: 0 }
+    ],
+    {
+      duration: 1400,
+      easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+      fill: "forwards"
+    }
+  ).onfinish = () => {
+    spark.remove();
+    game.consoleDiscovered = true;
+    game.consolePowered = true;
+    game.riverberoConsoleActivated = true;
+    syncConsoleVisualState();
+    render();
+    queueSave();
+
+    window.setTimeout(() => {
+      typeConsoleMessage(["...", "...", "Dove sono?"]);
+      setTimeout(() => {
+        startConsoleRandomMessages();
+      }, 2000);
+    }, 500);
+  };
+}
+
+function getBrainCenter() {
+  const arenaRect = arena.getBoundingClientRect();
+  const sourceRect = brain.getBoundingClientRect();
+  return {
+    x: sourceRect.left + sourceRect.width / 2 - arenaRect.left,
+    y: sourceRect.top + sourceRect.height / 2 - arenaRect.top
+  };
+}
+
+function calculateFixedUpgradeSpheres() {
+  const arenaRect = arena.getBoundingClientRect();
+  const center = getBrainCenter();
+  const leftNear = Math.min(250, Math.max(160, arenaRect.width * 0.22));
+  const leftFar = Math.min(320, Math.max(210, arenaRect.width * 0.28));
+  const rightNear = Math.min(270, Math.max(180, arenaRect.width * 0.24));
+  const rightFar = Math.min(340, Math.max(230, arenaRect.width * 0.3));
+  const upperNear = Math.min(220, Math.max(135, arenaRect.height * 0.19));
+  const upperFar = Math.min(280, Math.max(175, arenaRect.height * 0.25));
+  const lowerNear = Math.min(240, Math.max(150, arenaRect.height * 0.21));
+  const lowerFar = Math.min(290, Math.max(185, arenaRect.height * 0.27));
+
+  return [
+    { id: "s1", upgradeId: "synapse", x: center.x - leftNear, y: center.y - upperFar * UPGRADE_VERTICAL_SCALE },
+    { id: "s2", upgradeId: "cortex", x: center.x + rightFar, y: center.y - upperNear * UPGRADE_VERTICAL_SCALE },
+    { id: "s3", upgradeId: "drone", x: center.x - leftFar, y: center.y + lowerNear * UPGRADE_VERTICAL_SCALE },
+    { id: "s4", upgradeId: "cluster", x: center.x + rightNear, y: center.y + lowerFar * UPGRADE_VERTICAL_SCALE }
+  ];
+}
+
+function getAverageUpgradeRadius(center, nodes) {
+  if (!nodes.length) {
+    return 0;
+  }
+
+  let totalDistance = 0;
+  for (const node of nodes) {
+    const dx = node.x - center.x;
+    const dy = node.y - center.y;
+    totalDistance += Math.sqrt(dx * dx + dy * dy);
+  }
+
+  return totalDistance / nodes.length;
+}
+
+function toPolarScreenRadians(angleDegrees) {
+  return (angleDegrees - 90) * (Math.PI / 180);
+}
+
+function calculateFutureUpgradeSpheres() {
+  const center = getBrainCenter();
+  const innerNodes = calculateFixedUpgradeSpheres();
+  const baseRadius = getAverageUpgradeRadius(center, innerNodes);
+  const R2 = baseRadius * 1.65;
+  return futureNodeLayout.map((node) => {
+    const upgradeId = futureNodeUpgradeIds[node.id] || null;
+    if (typeof node.angle === "number") {
+      const radians = toPolarScreenRadians(node.angle);
+      const radius = baseRadius * node.distance;
+      return {
+        id: node.id,
+        x: center.x + Math.cos(radians) * radius,
+        y: center.y + Math.sin(radians) * radius * UPGRADE_VERTICAL_SCALE,
+        future: true,
+        depth: node.depth,
+        upgradeId
+      };
+    }
+
+    if (node.placement === "explicit-r2") {
+      return {
+        id: node.id,
+        x: center.x + node.offsetXFactor * R2,
+        y: center.y + node.offsetYFactor * R2 * UPGRADE_VERTICAL_SCALE,
+        future: true,
+        depth: node.depth,
+        upgradeId
+      };
+    }
+
+    return {
+      id: node.id,
+      x: center.x + node.offsetX,
+      y: center.y + node.offsetY * UPGRADE_VERTICAL_SCALE,
+      future: true,
+      depth: node.depth,
+      upgradeId
+    };
+  });
+}
+
+function getCachedSynapseNode(nodeId) {
+  return [...cachedSynapseNodes, ...cachedFutureSynapseNodes].find((item) => item.id === nodeId) || null;
+}
+
+function cacheFixedUpgradeSpheres() {
+  cachedSynapseNodes = calculateFixedUpgradeSpheres();
+  cachedFutureSynapseNodes = calculateFutureUpgradeSpheres();
+  cachedRootPaths.clear();
+  cachedFutureRootPaths.clear();
+
+  for (const nodeData of cachedSynapseNodes) {
+    cachedRootPaths.set(nodeData.id, calculateUpgradeRootPath(nodeData));
+  }
+
+  const allNodeLookup = new Map([
+    ...cachedSynapseNodes.map((node) => [node.id, node]),
+    ...cachedFutureSynapseNodes.map((node) => [node.id, node])
+  ]);
+
+  for (const config of futureTreeConnections) {
+    const targetNode = allNodeLookup.get(config.nodeId);
+    const anchorNode = allNodeLookup.get(config.anchorId);
+    if (!targetNode || !anchorNode) {
+      continue;
+    }
+
+    cachedFutureRootPaths.set(config.nodeId, calculateFutureUpgradeRootPath(anchorNode, targetNode, config.chain, config.depth));
+  }
+
+  for (const nodeData of [...cachedSynapseNodes, ...cachedFutureSynapseNodes]) {
+    const nodeRef = synapseNodeElements.get(nodeData.id);
+    if (!nodeRef) {
+      continue;
+    }
+
+    nodeRef.element.style.opacity = nodeData.depth >= 3 ? "0.08" : "";
+    nodeRef.element.style.left = nodeData.x + "px";
+    nodeRef.element.style.top = nodeData.y + "px";
+  }
+
+  if (activeTooltipNodeId) {
+    showSynapseTooltip(getCachedSynapseNode(activeTooltipNodeId));
+  }
+}
+
+function calculateUpgradeRootPath(nodeData) {
+  const center = getBrainCenter();
+  const dx = nodeData.x - center.x;
+  const dy = nodeData.y - center.y;
+  const horizontalBend = dx < 0 ? -34 : 34;
+  const verticalLift = dy < 0 ? -26 : 26;
+
+  return [
+    { x: center.x, y: center.y },
+    { x: center.x + dx * 0.22, y: center.y + dy * 0.12 },
+    { x: center.x + dx * 0.46 + horizontalBend, y: center.y + dy * 0.36 },
+    { x: center.x + dx * 0.72, y: center.y + dy * 0.7 + verticalLift },
+    { x: nodeData.x, y: nodeData.y }
+  ];
+}
+
+function calculateFutureUpgradeRootPath(anchorNode, nodeData, chain = "", depth = 2) {
+  const dx = nodeData.x - anchorNode.x;
+  const dy = nodeData.y - anchorNode.y;
+  const chainBias = chain === "A" || chain === "B" ? 1 : -1;
+  const bendX = (dx < 0 ? -1 : 1) * (18 + depth * 4) + chainBias * 6;
+  const bendY = (dy < 0 ? -1 : 1) * (10 + depth * 3);
+
+  return [
+    { x: anchorNode.x, y: anchorNode.y },
+    { x: anchorNode.x + dx * 0.16, y: anchorNode.y + dy * 0.08 },
+    { x: anchorNode.x + dx * 0.42 + bendX, y: anchorNode.y + dy * 0.3 + bendY },
+    { x: anchorNode.x + dx * 0.7 + bendX * 0.42, y: anchorNode.y + dy * 0.66 + bendY * 0.38 },
+    { x: nodeData.x, y: nodeData.y }
+  ];
+}
+
+function getUpgradeRevealProgress(upgrade) {
+  if (!upgrade || upgrade.unlockAt <= 0) {
+    return 0;
+  }
+
+  return Math.max(0, Math.min((game.maxImpulses || 0) / upgrade.unlockAt, 1));
+}
+
+function getFutureUpgradeRevealProgress(config) {
+  const totalInnerLevels = upgrades.reduce((sum, upgrade) => sum + getUpgradeLevel(upgrade.id), 0);
+  const parentLevel = getUpgradeLevel(config.parentUpgradeId);
+  const canBegin = config.nodeId === "f1"
+    ? (parentLevel >= 1 || totalInnerLevels >= 1)
+    : getFutureUpgradeRevealProgress(futureBranchConfigs.find((item) => item.nodeId === config.prerequisiteNodeId)) >= 1;
+
+  if (!canBegin) {
+    return 0;
+  }
+
+  const progressValue = game.maxImpulses || 0;
+  return Math.max(
+    0,
+    Math.min(
+      (progressValue - config.startThreshold) / Math.max(1, config.completeThreshold - config.startThreshold),
+      1
+    )
+  );
+}
+
+function syncActivatedRoots() {
+  let changed = false;
+
+  for (const upgrade of upgrades) {
+    if (activatedRoots.has(upgrade.id)) {
+      continue;
+    }
+
+    if (getUpgradeRevealProgress(upgrade) >= 1) {
+      activatedRoots.add(upgrade.id);
+      changed = true;
+    }
+  }
+
+  if (!changed) {
+    return;
+  }
+
+  game.revealed = upgrades
+    .filter((upgrade) => activatedRoots.has(upgrade.id))
+    .map((upgrade) => upgrade.id);
+  queueSave();
+}
+
+function hideSynapseTooltip() {
+  clearTimeout(tooltipHideTimer);
+  tooltipHideTimer = null;
+  synapseTooltip.classList.remove("visible");
+  activeTooltipNodeId = null;
+}
+
+function getUpgradeFormula(upgrade) {
+  const level = getUpgradeLevel(upgrade.id);
+
+  switch (upgrade.id) {
+    case "synapse": {
+      return `CLICK = base + (${level} &times; 3)`;
+    }
+
+    case "cortex": {
+      const synapseLevel = getUpgradeLevel("synapse");
+      return `PRESSIONE = SYN (${synapseLevel}) &times; CARICA^2 &times; MOLTIPLICATORE`;
+    }
+
+    case "cluster": {
+      return "HOLD BONUS = impulsi continui durante pressione";
+    }
+
+    case "drone": {
+      const synapse = getUpgradeLevel("synapse");
+      const cortex = getUpgradeLevel("cortex");
+      const cluster = getUpgradeLevel("cluster");
+      const drone = getUpgradeLevel("drone");
+
+      const total = synapse + cortex + cluster + drone;
+      const result = total * drone;
+
+      return `AUTO = (${total}) &times; DRN (${drone}) = ${result}/sec`;
+    }
+
+    case "psicocristallo": {
+      return "RAPIDO &times; (1 + 0.50 &times; LIV)";
+    }
+
+    case "ritual":
+    case "agopuntura": {
+      return "PERFECT HOLD -> BONUS TEMPORANEO";
+    }
+
+    case "riverbero": {
+      const synapse = getUpgradeLevel("synapse");
+      const cortex = getUpgradeLevel("cortex");
+      const cluster = getUpgradeLevel("cluster");
+      const drone = getUpgradeLevel("drone");
+      const riverbero = getUpgradeLevel("riverbero");
+
+      const blueTotal = synapse + cortex + cluster + drone;
+      const result = blueTotal * riverbero;
+
+      return `BLU (${blueTotal}) &times; RIV (${riverbero}) = ${result}/sec`;
+    }
+
+    case "diapason": {
+      return "ATTIVO -> &times;2 produzione per 10s";
+    }
+
+    default:
+      return "";
+  }
+}
+
+function showSynapseTooltip(nodeData) {
+  clearTimeout(tooltipHideTimer);
+  tooltipHideTimer = null;
+
+  if (!nodeData) {
+    hideSynapseTooltip();
+    return;
+  }
+
+  const upgrade = upgrades.find((item) => item.id === nodeData.upgradeId);
+  if (!upgrade) {
+    hideSynapseTooltip();
+    return;
+  }
+
+  const cost = getCost(upgrade);
+  const level = getUpgradeLevel(upgrade.id);
+  const longDescription = upgrade.longDescription || upgrade.description;
+  const formula = getUpgradeFormula(upgrade);
+  const generatedTotal = getUpgradeGeneratedTotal(upgrade.id);
+
+  synapseTooltip.innerHTML = `
+    <div class="tooltip-name">${upgrade.name}</div>
+    <div class="tooltip-level">Livello ${level}</div>
+    <div class="tooltip-desc">${longDescription}</div>
+    ${formula ? `<div class="tooltip-tech">${formula}</div>` : ""}
+    <div class="tooltip-level">Impulsi generati: ${formatNumber(generatedTotal)}</div>
+    <div class="tooltip-cost">Costo prossimo potenziamento: ${formatNumber(cost)} impulsi</div>
+  `;
+  synapseTooltip.classList.add("visible");
+  activeTooltipNodeId = nodeData.id;
+}
+
+function createSynapseNode(nodeData) {
+  const element = document.createElement("button");
+  element.type = "button";
+  element.className = "synapse-node primary-upgrade";
+  element.dataset.nodeId = nodeData.id;
+  element.style.left = nodeData.x + "px";
+  element.style.top = nodeData.y + "px";
+  if (nodeData.upgradeId) {
+    element.dataset.upgradeId = nodeData.upgradeId;
+    element.addEventListener("pointerenter", () => {
+      showSynapseTooltip(getCachedSynapseNode(nodeData.id));
+    });
+    element.addEventListener("pointerleave", () => {
+      clearTimeout(tooltipHideTimer);
+      tooltipHideTimer = setTimeout(() => {
+        if (activeTooltipNodeId === nodeData.id) {
+          hideSynapseTooltip();
+        }
+      }, 120);
+    });
+  } else {
+    element.disabled = true;
+    element.tabIndex = -1;
+    element.setAttribute("aria-hidden", "true");
+  }
+
+  const icon = document.createElement("span");
+  icon.className = "synapse-icon";
+
+  const owned = document.createElement("span");
+  owned.className = "synapse-owned";
+
+  element.appendChild(icon);
+  element.appendChild(owned);
+
+  return { element, icon, owned };
+}
+
+function ensureSynapseNodes() {
+  if (synapseNodeElements.size) {
+    return;
+  }
+
+  const nodes = cachedSynapseNodes.length || cachedFutureSynapseNodes.length
+    ? [...cachedSynapseNodes, ...cachedFutureSynapseNodes]
+    : [...calculateFixedUpgradeSpheres(), ...calculateFutureUpgradeSpheres()];
+  for (const nodeData of nodes) {
+    const nodeRef = createSynapseNode(nodeData);
+    synapseNodeElements.set(nodeData.id, nodeRef);
+    upgradeField.appendChild(nodeRef.element);
+  }
+}
+
+function renderFutureUpgradeNodes() {
+  for (const nodeData of cachedFutureSynapseNodes) {
+    const nodeRef = synapseNodeElements.get(nodeData.id);
+    if (!nodeRef) {
+      continue;
+    }
+
+    if (nodeData.upgradeId) {
+      continue;
+    }
+
+    const config = futureBranchConfigs.find((item) => item.nodeId === nodeData.id);
+    const branchProgress = config ? getFutureUpgradeRevealProgress(config) : 0;
+
+    nodeRef.element.classList.remove("upgrade-synapse", "upgrade-cortex", "upgrade-drone", "upgrade-cluster", "visible", "unlocked", "locked", "affordable", "owned", "inactive-upgrade", "active-upgrade");
+    nodeRef.element.classList.add("future-upgrade");
+    nodeRef.element.classList.toggle("future-upgrade-lit", branchProgress >= 1);
+    nodeRef.element.style.opacity = nodeData.depth >= 3 ? "0.08" : "";
+    nodeRef.element.style.left = nodeData.x + "px";
+    nodeRef.element.style.top = nodeData.y + "px";
+    nodeRef.icon.textContent = "·";
+    if (nodeData.depth >= 3) {
+      nodeRef.icon.textContent = "";
+    }
+    nodeRef.owned.textContent = "";
+    nodeRef.element.disabled = true;
+    nodeRef.element.tabIndex = -1;
+    nodeRef.element.removeAttribute("data-upgrade-id");
+    nodeRef.element.setAttribute("aria-hidden", "true");
+  }
+}
+
+function renderUpgradeIcon(iconElement, upgradeId) {
+  const iconAsset = upgradeIconAssets[upgradeId];
+  if (iconAsset) {
+    const currentImage = iconElement.querySelector("img");
+    if (!currentImage || currentImage.getAttribute("src") !== iconAsset.src) {
+      const image = document.createElement("img");
+      image.className = "synapse-icon-image";
+      image.src = iconAsset.src;
+      image.alt = "";
+      image.draggable = false;
+      iconElement.replaceChildren(image);
+    }
+    return;
+  }
+
+  iconElement.textContent = upgradeIcons[upgradeId] || "+";
+}
+
+function renderUpgradeSphere(nodeRef, nodeData, upgrade, revealed) {
+  const unlocked = game.maxImpulses >= upgrade.unlockAt;
+  const cost = getCost(upgrade);
+  const affordable = revealed && unlocked && game.impulses >= cost;
+  const level = getUpgradeLevel(upgrade.id);
+
+  nodeRef.element.dataset.upgradeId = upgrade.id;
+  nodeRef.element.classList.remove("upgrade-synapse", "upgrade-cortex", "upgrade-drone", "upgrade-cluster", "upgrade-psicocristallo", "upgrade-agopuntura", "upgrade-riverbero", "upgrade-diapason", "future-upgrade", "future-upgrade-lit");
+  nodeRef.element.classList.toggle("visible", revealed);
+  nodeRef.element.classList.toggle("unlocked", revealed && unlocked);
+  nodeRef.element.classList.toggle("locked", revealed && !unlocked);
+  nodeRef.element.classList.toggle("affordable", affordable);
+  nodeRef.element.classList.toggle("owned", level > 0);
+  nodeRef.element.classList.toggle("inactive-upgrade", revealed && level === 0);
+  nodeRef.element.classList.toggle("active-upgrade", revealed && level >= 1);
+  nodeRef.element.classList.add(`upgrade-${upgrade.id}`);
+  nodeRef.element.setAttribute("aria-hidden", revealed ? "false" : "true");
+  nodeRef.element.setAttribute("aria-label", `${upgrade.name}, costo ${formatNumber(cost)}, livello ${level}`);
+  nodeRef.element.disabled = !revealed || !unlocked;
+  nodeRef.element.tabIndex = revealed ? 0 : -1;
+  nodeRef.element.style.opacity = "";
+  nodeRef.element.style.left = nodeData.x + "px";
+  nodeRef.element.style.top = nodeData.y + "px";
+  renderUpgradeIcon(nodeRef.icon, upgrade.id);
+  nodeRef.owned.textContent = `x${level}`;
+  nodeRef.element.dataset.tooltipName = upgrade.name;
+  nodeRef.element.dataset.tooltipDesc = upgrade.description;
+  nodeRef.element.dataset.tooltipCost = String(cost);
+  nodeRef.element.dataset.tooltipOwned = String(level);
+}
+
+function renderUpgrades() {
+  ensureSynapseNodes();
+  syncActivatedRoots();
+  renderFutureUpgradeNodes();
+
+  for (const nodeData of cachedSynapseNodes) {
+    const upgrade = upgrades.find((item) => item.id === nodeData.upgradeId);
+    const nodeRef = synapseNodeElements.get(nodeData.id);
+    if (!upgrade || !nodeRef) {
+      continue;
+    }
+
+    const revealed = activatedRoots.has(upgrade.id);
+    renderUpgradeSphere(nodeRef, nodeData, upgrade, revealed);
+
+    if (!revealed && activeTooltipNodeId === nodeData.id) {
+      hideSynapseTooltip();
+    }
+  }
+
+  for (const nodeData of cachedFutureSynapseNodes) {
+    if (!nodeData.upgradeId) {
+      continue;
+    }
+
+    const nodeRef = synapseNodeElements.get(nodeData.id);
+    const upgrade = upgrades.find((item) => item.id === nodeData.upgradeId);
+    const config = futureBranchConfigs.find((item) => item.nodeId === nodeData.id);
+    if (!nodeRef || !upgrade || !config) {
+      continue;
+    }
+
+    renderUpgradeSphere(nodeRef, nodeData, upgrade, getFutureUpgradeRevealProgress(config) >= 1);
+  }
+
+  brain.classList.toggle("tool-psicocristallo-active", getUpgradeLevel("psicocristallo") >= 1);
+
+  if (activeTooltipNodeId) {
+    showSynapseTooltip(getCachedSynapseNode(activeTooltipNodeId));
+  }
+}
+
+function getPartialBranchPoints(path, progress) {
+  if (!path || path.length < 2 || progress <= 0) {
+    return [];
+  }
+
+  const clamped = Math.max(0, Math.min(progress, 1));
+  const segments = [];
+  let totalLength = 0;
+
+  for (let index = 1; index < path.length; index++) {
+    const start = path[index - 1];
+    const end = path[index];
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const length = Math.sqrt(dx * dx + dy * dy);
+    segments.push({ start, end, length });
+    totalLength += length;
+  }
+
+  const targetLength = totalLength * clamped;
+  let consumed = 0;
+  const partial = [{ x: path[0].x, y: path[0].y }];
+
+  for (const segment of segments) {
+    if (consumed + segment.length <= targetLength) {
+      partial.push({ x: segment.end.x, y: segment.end.y });
+      consumed += segment.length;
+      continue;
+    }
+
+    const remaining = Math.max(0, targetLength - consumed);
+    const ratio = segment.length > 0 ? remaining / segment.length : 0;
+    partial.push({
+      x: segment.start.x + (segment.end.x - segment.start.x) * ratio,
+      y: segment.start.y + (segment.end.y - segment.start.y) * ratio
+    });
+    break;
+  }
+
+  return partial;
+}
+
+function drawTaperedStroke(ctx, points, widthStart, widthEnd, color, blur) {
+  if (!ctx || !points || points.length < 2) {
+    return;
+  }
+
+  const lastSegment = Math.max(1, points.length - 1);
+  ctx.strokeStyle = color;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = blur;
+
+  for (let index = 1; index < points.length; index++) {
+    const t = (index - 1) / lastSegment;
+    const eased = 1 - Math.pow(t, 0.9);
+    ctx.lineWidth = widthEnd + (widthStart - widthEnd) * eased;
+    ctx.beginPath();
+    ctx.moveTo(points[index - 1].x, points[index - 1].y);
+    ctx.lineTo(points[index].x, points[index].y);
+    ctx.stroke();
+  }
+}
+
+function drawTwig(ctx, twig, color, blur) {
+  if (!twig || !twig.points || twig.points.length < 3) {
+    return;
+  }
+
+  ctx.strokeStyle = color;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = blur;
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  ctx.moveTo(twig.points[0].x, twig.points[0].y);
+  ctx.quadraticCurveTo(
+    twig.points[1].x,
+    twig.points[1].y,
+    twig.points[2].x,
+    twig.points[2].y
+  );
+  ctx.stroke();
+}
+
+function getPointAtProgress(path, progress) {
+  const partial = getPartialBranchPoints(path, progress);
+  if (!partial.length) {
+    return null;
+  }
+
+  return partial[partial.length - 1];
+}
+
+function drawEndpointNode(ctx, point, intensity, unlocked, timeSeed) {
+  if (!point) {
+    return;
+  }
+
+  const pulse = 0.88 + Math.sin(branchVisualTime * 0.0026 + timeSeed) * 0.08;
+  const glow = unlocked ? 18 : 10;
+  const alpha = unlocked ? 0.82 : 0.38 + intensity * 0.2;
+  const radius = unlocked ? 5.8 : 4.1 + intensity * 0.6;
+
+  ctx.save();
+  ctx.fillStyle = `rgba(114, 240, 255, ${alpha * 0.28})`;
+  ctx.shadowColor = `rgba(114, 240, 255, ${alpha})`;
+  ctx.shadowBlur = glow * pulse;
+  ctx.beginPath();
+  ctx.arc(point.x, point.y, radius * 1.8 * pulse, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = `rgba(220, 255, 255, ${alpha})`;
+  ctx.shadowBlur = glow * 0.6;
+  ctx.beginPath();
+  ctx.arc(point.x, point.y, radius * pulse, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawImpulse(ctx, path, progress, pulseConfig, intensity) {
+  if (progress <= 0.06) {
+    return;
+  }
+
+  const visibleProgress = Math.max(0.04, progress);
+  const motion = (branchVisualTime * pulseConfig.speed * 0.00045 + pulseConfig.seed) % 1;
+  const pulseProgress = visibleProgress * motion;
+  const point = getPointAtProgress(path, pulseProgress);
+  if (!point) {
+    return;
+  }
+
+  const alpha = 0.2 + intensity * 0.45;
+  const radius = pulseConfig.size + intensity * 0.65;
+
+  ctx.save();
+  ctx.fillStyle = `rgba(225, 255, 255, ${alpha})`;
+  ctx.shadowColor = `rgba(114, 240, 255, ${0.55 + intensity * 0.25})`;
+  ctx.shadowBlur = 12 + intensity * 6;
+  ctx.beginPath();
+  ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawPartialPath(ctx, path, progress, twigs = [], pulseOffsets = [], branchSeed = 0) {
+  const partialPoints = getPartialBranchPoints(path, progress);
+  if (partialPoints.length < 2) {
+    return null;
+  }
+
+  const branchLife = Math.max(0, Math.min(progress, 1));
+  const branchStability = Math.pow(branchLife, 0.78);
+  const flicker = 0.96 + Math.sin(branchVisualTime * 0.0032 + branchSeed) * (0.08 * (1 - branchStability));
+  const outerAlpha = 0.08 + branchStability * 0.14;
+  const mainAlpha = 0.2 + branchStability * 0.42;
+  const innerAlpha = 0.36 + branchStability * 0.54;
+
+  drawTaperedStroke(ctx, partialPoints, 13 * flicker, 3.4, `rgba(114, 240, 255, ${outerAlpha})`, 20);
+  drawTaperedStroke(ctx, partialPoints, 6.8 * flicker, 2.1, `rgba(114, 240, 255, ${mainAlpha})`, 8);
+  drawTaperedStroke(ctx, partialPoints, 2.8, 1, `rgba(230, 255, 255, ${innerAlpha})`, 4);
+
+  const revealedSegments = partialPoints.length - 1;
+  for (const twig of twigs) {
+    if (twig.anchorIndex <= revealedSegments) {
+      drawTwig(ctx, twig, `rgba(140, 245, 255, ${0.12 + branchStability * 0.14})`, 6);
+      drawTwig(ctx, twig, `rgba(230, 255, 255, ${0.18 + branchStability * 0.24})`, 2);
+    }
+  }
+
+  const tip = partialPoints[partialPoints.length - 1];
+  const unlocked = progress >= 1;
+  drawEndpointNode(ctx, path[path.length - 1], branchStability, unlocked, branchSeed);
+  drawEndpointNode(ctx, tip, branchStability, false, branchSeed + 0.7);
+
+  for (const pulseConfig of pulseOffsets) {
+    drawImpulse(ctx, path, progress, pulseConfig, branchStability);
+  }
+
+  return tip;
+}
+
+function renderRoots() {
+  syncActivatedRoots();
+
+  if (window.innerWidth <= 980) {
+    if (rootCtx && rootCanvas) {
+      rootCtx.clearRect(0, 0, rootCanvas.width, rootCanvas.height);
+    }
+    return;
+  }
+
+  resizeRootCanvas();
+  if (!rootCtx || !rootCanvas) {
+    return;
+  }
+
+  rootCtx.clearRect(0, 0, rootCanvas.width, rootCanvas.height);
+  for (let index = 0; index < cachedSynapseNodes.length; index++) {
+    const nodeData = cachedSynapseNodes[index];
+    const upgrade = upgrades.find((item) => item.id === nodeData.upgradeId);
+    const path = cachedRootPaths.get(nodeData.id);
+    if (!upgrade || !path) {
+      continue;
+    }
+
+    const progress = getUpgradeRevealProgress(upgrade);
+    if (progress <= 0) {
+      continue;
+    }
+
+    drawPartialPath(
+      rootCtx,
+      path,
+      progress,
+      [],
+      [{ speed: 0.72 + index * 0.08, seed: 0.13 + index * 0.17, size: 2.1 + index * 0.18 }],
+      index * 0.91 + 0.2
+    );
+  }
+
+  for (const config of futureBranchConfigs) {
+    const path = cachedFutureRootPaths.get(config.nodeId);
+    if (!path) {
+      continue;
+    }
+
+    const progress = getFutureUpgradeRevealProgress(config);
+    if (progress <= 0) {
+      continue;
+    }
+
+    drawPartialPath(
+      rootCtx,
+      path,
+      progress,
+      [],
+      [{ speed: 0.62 + config.seed * 0.03, seed: config.seed, size: 1.9 }],
+      config.seed
+    );
+  }
+}
+
+function tickBranchVisuals(now) {
+  branchVisualTime = now;
+  if (updateDiapasonState(Date.now())) {
+    render();
+    queueSave();
+  }
+  if (updateAgopunturaBuffState(Date.now())) {
+    render();
+    queueSave();
+  }
+  if (introCompleted && now - lastEnvironmentRenderAt >= 33) {
+    lastEnvironmentRenderAt = now;
+    renderEnvironment();
+  }
+  if (introCompleted) {
+    renderRoots();
+  }
+  branchAnimationFrame = requestAnimationFrame(tickBranchVisuals);
+}
+
+function getBrainClickPosition(event) {
+  const zoneRect = brainZone.getBoundingClientRect();
+  const point = event && event.changedTouches && event.changedTouches.length
+    ? event.changedTouches[0]
+    : event && event.touches && event.touches.length
+      ? event.touches[0]
+      : event;
+  const clickX = point && typeof point.clientX === "number"
+    ? point.clientX - zoneRect.left
+    : zoneRect.width / 2;
+  const clickY = point && typeof point.clientY === "number"
+    ? point.clientY - zoneRect.top
+    : zoneRect.height / 2;
+
+  return { x: clickX, y: clickY };
+}
+
+function ripple(event) {
+  const { x, y } = getBrainClickPosition(event);
+  const node = document.createElement("div");
+  node.className = "ripple";
+  node.style.left = x + "px";
+  node.style.top = y + "px";
+  brainZone.appendChild(node);
+  setTimeout(() => node.remove(), 620);
+}
+
+function brainFlash(event) {
+  const { x, y } = getBrainClickPosition(event);
+  const node = document.createElement("div");
+  node.className = "brain-flash";
+  node.style.left = x + "px";
+  node.style.top = y + "px";
+  brainZone.appendChild(node);
+  setTimeout(() => node.remove(), 420);
+}
+
+function chargedBurst(event, intensity) {
+  const { x, y } = getBrainClickPosition(event);
+  const burst = document.createElement("div");
+  burst.className = "charge-burst";
+  burst.style.left = x + "px";
+  burst.style.top = y + "px";
+  burst.style.width = 34 + intensity * 26 + "px";
+  burst.style.height = 34 + intensity * 26 + "px";
+  burst.style.animationDuration = 0.34 + intensity * 0.18 + "s";
+
+  const wave = document.createElement("div");
+  wave.className = "charge-wave";
+  wave.style.left = x + "px";
+  wave.style.top = y + "px";
+  wave.style.width = 30 + intensity * 38 + "px";
+  wave.style.height = 30 + intensity * 38 + "px";
+  wave.style.animationDuration = 0.44 + intensity * 0.24 + "s";
+
+  brainZone.appendChild(wave);
+  brainZone.appendChild(burst);
+  setTimeout(() => wave.remove(), 760);
+  setTimeout(() => burst.remove(), 620);
+}
+
+function holdCulminationFlash() {
+  const node = document.createElement("div");
+  node.className = "hold-crown";
+  brainZone.appendChild(node);
+  setTimeout(() => node.remove(), 700);
+}
+
+function setBrainCompression(scale, duration, easing) {
+  clearTimeout(brainReleaseTimer);
+  brainCurrentCompression = scale;
+  brain.style.transition = `transform ${duration}ms ${easing}`;
+  brain.style.transform = `scale(${scale})`;
+}
+
+function setBrainHoldEnergy(value) {
+  brainZone.style.setProperty("--hold-energy", value.toFixed(3));
+}
+
+function getMinimumCompression(delta) {
+  if (delta < 95) {
+    return 0.994;
+  }
+  if (delta < 180) {
+    return 0.991;
+  }
+  if (delta < 320) {
+    return 0.988;
+  }
+  return 0.984;
+}
+
+function getMaximumCompression(delta) {
+  if (delta < 95) {
+    return 0.964;
+  }
+  if (delta < 180) {
+    return 0.938;
+  }
+  if (delta < 320) {
+    return 0.915;
+  }
+  return 0.896;
+}
+
+function stopBrainPressAnimation() {
+  if (brainPressAnimationFrame) {
+    cancelAnimationFrame(brainPressAnimationFrame);
+    brainPressAnimationFrame = 0;
+  }
+}
+
+function applyHoldPulseIncome(now) {
+  const pulsePower = game.holdPulsePower || 0;
+  if (!brainIsPressed || pulsePower <= 0) {
+    return;
+  }
+
+  while (now - lastHoldPulseAt >= HOLD_PULSE_INTERVAL_MS) {
+    lastHoldPulseAt += HOLD_PULSE_INTERVAL_MS;
+    game.impulses += pulsePower;
+    game.maxImpulses = Math.max(game.maxImpulses || 0, game.impulses);
+    addUpgradeGenerated("cluster", pulsePower);
+    floatingValue(pulsePower, null, {
+      className: "hold-tick",
+      offsetX: (Math.random() - 0.5) * 34,
+      offsetY: -12 - Math.random() * 16
+    });
+    render();
+    queueSave();
+  }
+}
+
+function tickBrainHoldCompression() {
+  if (!brainIsPressed) {
+    return;
+  }
+
+  applyHoldPulseIncome(performance.now());
+
+  const elapsed = performance.now() - brainHoldStartAt;
+  brainHoldProgress = Math.max(0, Math.min(elapsed / MAX_HOLD_DURATION_MS, 1));
+  const eased = 1 - Math.pow(1 - brainHoldProgress, 2.2);
+  const scale = brainMinCompression + (brainMaxCompression - brainMinCompression) * eased;
+
+  brain.style.transition = "transform 0.032s linear";
+  brain.style.transform = `scale(${scale})`;
+  brainCurrentCompression = scale;
+  setBrainHoldEnergy(brainHoldProgress);
+
+  if (brainHoldProgress >= 1 && !brainHoldCulminated) {
+    brainHoldCulminated = true;
+    holdCulminationFlash();
+  }
+
+  brainPressAnimationFrame = requestAnimationFrame(tickBrainHoldCompression);
+}
+
+function beginBrainPress(pointerId) {
+  const now = performance.now();
+  const delta = lastBrainClickAt ? now - lastBrainClickAt : 999;
+  lastBrainClickAt = now;
+  brainIsPressed = true;
+  activeBrainPointerId = pointerId;
+  brainHoldStartAt = now;
+  brainHoldProgress = 0;
+  brainHoldCulminated = false;
+  brainMinCompression = getMinimumCompression(delta);
+  brainMaxCompression = getMaximumCompression(delta);
+  lastHoldPulseAt = now;
+
+  clearTimeout(brainHoldTimer);
+  stopBrainPressAnimation();
+  setBrainCompression(brainMinCompression, 24, "linear");
+  setBrainHoldEnergy(0);
+
+  brainHoldTimer = setTimeout(() => {
+    if (!brainIsPressed) {
+      return;
+    }
+    stopBrainPressAnimation();
+    brainPressAnimationFrame = requestAnimationFrame(tickBrainHoldCompression);
+  }, 40);
+}
+
+function releaseBrainPress(pointerId) {
+  if (!brainIsPressed) {
+    return;
+  }
+  if (pointerId !== undefined && activeBrainPointerId !== null && pointerId !== activeBrainPointerId) {
+    return;
+  }
+
+  const releasedHoldProgress = Math.max(
+    brainHoldProgress,
+    Math.max(0, Math.min((performance.now() - brainHoldStartAt) / MAX_HOLD_DURATION_MS, 1))
+  );
+  brainIsPressed = false;
+  activeBrainPointerId = null;
+  clearTimeout(brainHoldTimer);
+  stopBrainPressAnimation();
+  brainHoldProgress = 0;
+  brainHoldCulminated = false;
+  lastHoldPulseAt = 0;
+  setBrainCompression(1, 130, "cubic-bezier(0.22, 1, 0.36, 1)");
+  setBrainHoldEnergy(0);
+
+  brainReleaseTimer = setTimeout(() => {
+    brain.style.transition = "transform 0.06s linear";
+  }, 140);
+
+  return releasedHoldProgress;
+}
+
+function getChargedBonus(progress) {
+  if (progress < 0.12) {
+    return 0;
+  }
+
+  const cortexLevel = getUpgradeLevel("cortex");
+  const synapseLevel = getUpgradeLevel("synapse");
+
+  if (cortexLevel <= 0 || synapseLevel <= 0) {
+    return 0;
+  }
+
+  const pressureMultiplier = 3 + cortexLevel * 1.15;
+
+  return Math.round(
+    synapseLevel *
+    pressureMultiplier *
+    progress *
+    progress *
+    getDiapasonOutputMultiplier()
+  );
+}
+
+function activateDiapason() {
+  const level = getUpgradeLevel("diapason");
+  const now = Date.now();
+  if (level < 1 || game.diapasonActive || now < game.diapasonCooldownEnd) {
+    return;
+  }
+
+  game.diapasonActive = true;
+  game.diapasonEndTime = now + (1 + level) * 1000;
+  game.diapasonCooldownEnd = 0;
+  render();
+  queueSave();
+}
+
+function activateAgopunturaBuff(holdProgress) {
+  if (holdProgress < 1 || getUpgradeLevel("agopuntura") < 1 || game.buffActive) {
+    return false;
+  }
+
+  game.buffActive = true;
+  game.buffEndTime = Date.now() + AGOPUNTURA_BUFF_DURATION_MS;
+  syncAgopunturaBuffVisual();
+  return true;
+}
+
+function applyChargedImpulse(event, holdProgress) {
+  const activatedBuff = activateAgopunturaBuff(holdProgress);
+  const bonus = getChargedBonus(holdProgress);
+  if (bonus <= 0) {
+    if (activatedBuff) {
+      render();
+      queueSave();
+    }
+    return;
+  }
+
+  game.impulses += bonus;
+  game.maxImpulses = Math.max(game.maxImpulses || 0, game.impulses);
+  chargedBurst(event, holdProgress);
+  floatingValue(bonus, event);
+  render();
+  queueSave();
+}
+
+function floatingValue(amount, event, options = {}) {
+  const node = document.createElement("div");
+  const { x: clickX, y: clickY } = getBrainClickPosition(event);
+  const offsetX = options.offsetX || 0;
+  const offsetY = options.offsetY || 0;
+
+  node.className = "float-number";
+  if (options.className) {
+    node.classList.add(options.className);
+  }
+  node.textContent = "+" + formatNumber(amount);
+  node.style.left = clickX + offsetX + "px";
+  node.style.top = clickY + offsetY + "px";
+  brainZone.appendChild(node);
+  setTimeout(() => node.remove(), 900);
+}
+
+function hideHintIfNeeded() {
+  const shouldShowHint = introCompleted && game.totalClicks === 0;
+  hint.classList.toggle("hidden", !shouldShowHint);
+}
+
+function render() {
+  updateGameplayVisualState();
+  updateDiapasonState();
+  updateAgopunturaBuffState();
+  recalculateStats();
+  renderStats();
+  updateBrainVisual();
+  updateDormancyVisual();
+  updateAtmosphere();
+  updateConsoleNarrativeProgression();
+  hideHintIfNeeded();
+  renderUpgrades();
+  renderToolRack();
+  renderConsoleOutput();
+}
+
+function clickBrain(event, amount = game.rapidClickPower || game.clickPower) {
+  event.preventDefault();
+  game.impulses += amount;
+  game.maxImpulses = Math.max(game.maxImpulses || 0, game.impulses);
+  game.totalClicks += 1;
+  spawnBackgroundPulse(event);
+  brainFlash(event);
+  ripple(event);
+  floatingValue(amount, event);
+  render();
+  queueSave();
+}
+
+function handleBrainRelease(event, pointerId) {
+  const holdProgress = releaseBrainPress(pointerId);
+  if (typeof holdProgress !== "number") {
+    return;
+  }
+
+  if (holdProgress >= 1) {
+    activateAgopunturaBuff(holdProgress);
+    clickBrain(event, game.sustainedClickPower || game.clickPower);
+    return;
+  }
+
+  clickBrain(event, game.rapidClickPower || game.clickPower);
+}
+
+function buyUpgrade(upgradeId) {
+  const upgrade = upgrades.find((item) => item.id === upgradeId);
+  if (!upgrade) {
+    return;
+  }
+
+  if (game.maxImpulses < upgrade.unlockAt) {
+    return;
+  }
+
+  const cost = getCost(upgrade);
+  if (game.impulses < cost) {
+    return;
+  }
+
+  game.impulses -= cost;
+  getUpgradeState(upgrade.id).owned += 1;
+  if (upgrade.id === "riverbero" && !game.riverberoConsoleActivated) {
+    animateRiverberoToConsole();
+  }
+  render();
+  queueSave();
+}
+
+function resetGame() {
+  Object.assign(game, cloneState(defaultState));
+  activatedRoots = new Set();
+  currentBrainStage = -1;
+  brainIsPressed = false;
+  activeBrainPointerId = null;
+  clearTimeout(brainHoldTimer);
+  clearTimeout(brainReleaseTimer);
+  stopBrainPressAnimation();
+  lastHoldPulseAt = 0;
+  setBrainHoldEnergy(0);
+  brain.style.transform = "scale(1)";
+  brain.style.transition = "transform 0.06s linear";
+  clearTimeout(brainFadeTimer);
+  localStorage.removeItem(SAVE_KEY);
+  clearTimeout(saveTimer);
+  saveTimer = null;
+  if (consoleTypingTimer) {
+    clearTimeout(consoleTypingTimer);
+    consoleTypingTimer = 0;
+  }
+  if (consoleFadeTimer) {
+    clearTimeout(consoleFadeTimer);
+    consoleFadeTimer = 0;
+  }
+  if (consoleClearTimer) {
+    clearTimeout(consoleClearTimer);
+    consoleClearTimer = 0;
+  }
+  if (consoleMessageInterval) {
+    clearInterval(consoleMessageInterval);
+    consoleMessageInterval = null;
+  }
+  recentMessages = [];
+  currentConsoleMessage = "";
+  consoleText.classList.remove("console-visible", "console-fade-out");
+  lastSavedAt = 0;
+  game.diapasonActive = false;
+  game.diapasonEndTime = 0;
+  game.diapasonCooldownEnd = 0;
+  game.gameVisualActive = false;
+  syncAgopunturaBuffVisual();
+  syncConsoleVisualState();
+  renderConsoleOutput();
+  clearLinkLayer();
+  render();
+  statusText.textContent = "Progressi azzerati.";
+}
+
+function handleAutoTick() {
+  if (game.autoPower <= 0) {
+    return;
+  }
+
+  const droneOutput = getDroneAutoOutput();
+  const riverberoOutput = getRiverberoAutoOutput();
+  const totalAutoOutput = droneOutput + riverberoOutput;
+
+  game.impulses += totalAutoOutput;
+  game.maxImpulses = Math.max(game.maxImpulses || 0, game.impulses);
+  addUpgradeGenerated("drone", droneOutput);
+  addUpgradeGenerated("riverbero", riverberoOutput);
+  render();
+  queueSave();
+}
+
+brain.addEventListener("pointerdown", (event) => {
+  beginBrainPress(event.pointerId);
+  if (typeof brain.setPointerCapture === "function") {
+    brain.setPointerCapture(event.pointerId);
+  }
+});
+brain.addEventListener("pointerup", (event) => {
+  handleBrainRelease(event, event.pointerId);
+});
+brain.addEventListener("pointercancel", (event) => {
+  releaseBrainPress(event.pointerId);
+});
+brain.addEventListener("lostpointercapture", (event) => {
+  releaseBrainPress(event.pointerId);
+});
+
+if (!window.PointerEvent) {
+  brain.addEventListener("touchstart", (event) => {
+    event.preventDefault();
+    beginBrainPress("touch");
+  }, { passive: false });
+
+  brain.addEventListener("touchend", (event) => {
+    event.preventDefault();
+    handleBrainRelease(event, "touch");
+  }, { passive: false });
+
+  brain.addEventListener("touchcancel", (event) => {
+    event.preventDefault();
+    releaseBrainPress("touch");
+  }, { passive: false });
+}
+introOverlay.addEventListener("click", completeIntro);
+
+upgradeField.addEventListener("click", (event) => {
+  const nodeElement = event.target.closest(".synapse-node");
+  if (!nodeElement) {
+    return;
+  }
+
+  const upgradeId = nodeElement.dataset.upgradeId;
+  if (!upgradeId) {
+    return;
+  }
+
+  buyUpgrade(upgradeId);
+  nodeElement.classList.remove("clicked");
+  void nodeElement.offsetWidth;
+  nodeElement.classList.add("clicked");
+});
+
+upgradeField.addEventListener("pointerleave", () => {
+  clearTimeout(tooltipHideTimer);
+  tooltipHideTimer = setTimeout(() => {
+    hideSynapseTooltip();
+  }, 120);
+});
+
+diapasonTool.addEventListener("click", () => {
+  activateDiapason();
+});
+
+resetBtn.addEventListener("click", resetGame);
+
+window.addEventListener("resize", () => {
+  clearLinkLayer();
+  cacheFixedUpgradeSpheres();
+  renderEnvironment();
+  render();
+});
+
+cacheFixedUpgradeSpheres();
+ensureSynapseNodes();
+syncConsoleVisualState();
+if (game.consolePowered) {
+  startConsoleRandomMessages();
+}
+consoleText.classList.remove("console-visible", "console-fade-out");
+renderConsoleOutput();
+render();
+branchAnimationFrame = requestAnimationFrame(tickBranchVisuals);
+renderEnvironment();
+autoTickInterval = window.setInterval(handleAutoTick, 1000);
+</script>
+</body>
+</html>
+
