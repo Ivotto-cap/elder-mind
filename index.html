@@ -3687,11 +3687,11 @@ let devBoostEnabled = false;
 let devTimeMultiplier = 1;
 let pendingResetConfirmationAction = null;
 
-brainClickSound.volume = 0.6;
+brainClickSound.volume = 0.78;
 agopunturaSound.volume = 0.7;
 diapasonSound.volume = 0.7;
-clickHoldSound.volume = 0.6;
-vibranteSound.volume = 0.5;
+clickHoldSound.volume = 0.48;
+vibranteSound.volume = 0.4;
 achievementSound.volume = 0.75;
 bluePowerupSound.volume = 0.7;
 crystalPowerupSound.volume = 0.75;
@@ -3737,7 +3737,7 @@ function clampAudioVolume(value, fallback = 1) {
 }
 
 function getMusicVolume() {
-  return clampAudioVolume(musicVolume, 0.12);
+  return clampAudioVolume(musicVolume, 0.12) * 0.7;
 }
 
 function getSfxVolume() {
@@ -6336,7 +6336,7 @@ function setBackgroundVolume(value) {
 
 function playBrainClickSound() {
   const sound = brainClickSound.cloneNode();
-  sound.volume = (brainClickSound._baseVolume ?? brainClickSound.volume) * getSfxVolume();
+  sound.volume = brainClickSound.volume;
   sound.muted = isSfxMuted;
   sound.play().catch(() => {});
 }
@@ -6359,7 +6359,7 @@ function playClickHoldSound() {
   stopVibranteSounds();
 
   const sound = clickHoldSound.cloneNode();
-  sound.volume = (clickHoldSound._baseVolume ?? clickHoldSound.volume) * getSfxVolume();
+  sound.volume = clickHoldSound.volume;
   sound.muted = isSfxMuted;
 
   sound.play().catch((error) => {
@@ -6370,7 +6370,7 @@ function playClickHoldSound() {
 function playVibranteSound() {
   const sound = vibranteSound.cloneNode();
   sound._baseVolume = vibranteSound._baseVolume ?? vibranteSound.volume;
-  sound.volume = sound._baseVolume * getSfxVolume();
+  sound.volume = vibranteSound.volume;
   sound.muted = isSfxMuted;
 
   activeVibranteSounds.push(sound);
