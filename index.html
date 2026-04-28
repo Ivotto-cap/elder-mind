@@ -211,7 +211,7 @@ body.demo-final-active .intro-overlay {
   padding: clamp(24px, 4vw, 56px);
   background:
     linear-gradient(180deg, rgba(0, 0, 0, 0.24), rgba(0, 0, 0, 0.54)),
-    url("outrodemo.png") center / cover no-repeat;
+    url("assets/img/outrodemo.png") center / cover no-repeat;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.42s ease;
@@ -432,7 +432,7 @@ body.morespace-collapse::before {
   background:
     linear-gradient(180deg, rgba(2, 7, 12, 0.28), rgba(2, 7, 12, 0.52)),
     linear-gradient(180deg, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.54)),
-    url("intro.png") center / cover no-repeat;
+    url("assets/img/intro.png") center / cover no-repeat;
   cursor: pointer;
   transition: opacity 0.7s ease, visibility 0.7s ease;
 }
@@ -1913,7 +1913,7 @@ body.morespace-collapse::before {
 }
 
 #brain.tool-psicocristallo-active {
-  cursor: url("cursorerosso-32.png") 8 8, pointer;
+  cursor: url("assets/img/cursorerosso-32.png") 8 8, pointer;
 }
 
 .upgrade-node {
@@ -2744,7 +2744,7 @@ body.morespace-collapse::before {
 }
   </style>
   <audio id="bgMusic" loop>
-    <source src="musicaBG.mp3" type="audio/mpeg">
+    <source src="assets/audio/musicaBG.mp3" type="audio/mpeg">
   </audio>
 </head>
 <body>
@@ -2777,7 +2777,7 @@ body.morespace-collapse::before {
 
   <main class="arena" id="arena">
     <div class="neural-console" aria-hidden="true">
-      <img src="console.png" class="console-bg" alt="" draggable="false">
+      <img src="assets/img/console.png" class="console-bg" alt="" draggable="false">
       <img id="consoleImage" class="console-image hidden" src="" alt="" draggable="false">
       <div class="console-text"></div>
     </div>
@@ -2816,7 +2816,7 @@ body.morespace-collapse::before {
     <div class="synapse-tooltip" id="synapseTooltip"></div>
     <aside class="tool-rack" id="toolRack" aria-label="Strumenti attivi">
       <button class="tool-slot hidden" id="diapasonTool" type="button" aria-label="Diapason">
-        <img src="diapason.png" class="tool-icon-image" alt="Diapason" draggable="false">
+        <img src="assets/img/diapason.png" class="tool-icon-image" alt="Diapason" draggable="false">
         <span class="tool-cooldown-count" id="diapasonCooldownCount"></span>
       </button>
     </aside>
@@ -2824,11 +2824,11 @@ body.morespace-collapse::before {
     <section class="core" id="brainZone">
       <div class="core-glow"></div>
       <div class="brain-fx-layer" id="brainFxLayer"></div>
-      <img class="dendritic-needle" id="dendriticNeedle" src="spillo.png" alt="" aria-hidden="true" draggable="false">
+      <img class="dendritic-needle" id="dendriticNeedle" src="assets/img/spillo.png" alt="" aria-hidden="true" draggable="false">
       <div id="brain" aria-label="Cervello" role="button">
         <div class="brain-stack">
-          <img class="brain-layer active" id="brainCurrent" src="brain1.png" alt="Cervello fase corrente" draggable="false">
-          <img class="brain-layer" id="brainNext" src="brain1.png" alt="" draggable="false">
+          <img class="brain-layer active" id="brainCurrent" src="assets/img/brain1.png" alt="Cervello fase corrente" draggable="false">
+          <img class="brain-layer" id="brainNext" src="assets/img/brain1.png" alt="" draggable="false">
         </div>
       </div>
     </section>
@@ -3447,15 +3447,15 @@ const upgradeIcons = {
 };
 
 const upgradeIconAssets = {
-  synapse: { src: "toccodivelluto.png", alt: "Tocco di Velluto" },
-  cortex: { src: "digitopressione.png", alt: "Digitopressione" },
-  drone: { src: "stabilizzatoreimpulsi.png", alt: "Stabilizzatore Impulsi" },
-  cluster: { src: "toccovibrante.png", alt: "Tocco Vibrante" },
-  psicocristallo: { src: "psicocristallorosso.png", alt: "Psicocristallo Rosso" },
-  agopuntura: { src: "agopunturadendritica.png", alt: "Agopuntura Dendritica" },
-  riverbero: { src: "riverberoneurale.png", alt: "Riverbero Mentale" },
-  diapason: { src: "diapason.png", alt: "Diapason" },
-  potential_unlock: { src: "espansionecervello.png", alt: "Sblocco del potenziale" }
+  synapse: { src: "assets/img/toccodivelluto.png", alt: "Tocco di Velluto" },
+  cortex: { src: "assets/img/digitopressione.png", alt: "Digitopressione" },
+  drone: { src: "assets/img/stabilizzatoreimpulsi.png", alt: "Stabilizzatore Impulsi" },
+  cluster: { src: "assets/img/toccovibrante.png", alt: "Tocco Vibrante" },
+  psicocristallo: { src: "assets/img/psicocristallorosso.png", alt: "Psicocristallo Rosso" },
+  agopuntura: { src: "assets/img/agopunturadendritica.png", alt: "Agopuntura Dendritica" },
+  riverbero: { src: "assets/img/riverberoneurale.png", alt: "Riverbero Mentale" },
+  diapason: { src: "assets/img/diapason.png", alt: "Diapason" },
+  potential_unlock: { src: "assets/img/espansionecervello.png", alt: "Sblocco del potenziale" }
 };
 
 const CONSOLE_PHASES = {
@@ -3631,26 +3631,26 @@ const resetConfirmAccept = document.getElementById("resetConfirmAccept");
 const backgroundMusic = document.getElementById("bgMusic");
 const muteBtn = document.getElementById("muteBtn");
 const bgSlider = document.getElementById("bgVolume");
-const brainClickSound = new Audio("./click1.mp3");
-const agopunturaSound = new Audio("./agopuntura.mp3");
-const diapasonSound = new Audio("./diapason.wav");
-const clickHoldSound = new Audio("./clickprolungato.wav");
-const vibranteSound = new Audio("./toccovibrante.mp3");
-const achievementSound = new Audio("./obiettivo.wav");
-const bluePowerupSound = new Audio("./powerupblu.wav");
-const crystalPowerupSound = new Audio("./powerupcristallo.wav");
-const purplePowerupSound = new Audio("./powerupviola.wav");
-const greenPowerupSound = new Audio("./powerupverde.wav");
-const drain2MSound = new Audio("./drenaggio2m.wav");
-const drainUpgradeSound = new Audio("./drenaggio.wav");
-const magicGlowSound = new Audio("./magicglow.wav");
-const greenClickSound = new Audio("./powerupverde.mp3");
-const brainStageTwoAppearSound = new Audio("./brain2appare.wav");
-const outroSound = new Audio("./outro.mp3");
-const blockedSound = new Audio("./blocked.wav");
-const consoleTypingSound = new Audio("./consoletyping.wav");
+const brainClickSound = new Audio("assets/audio/click1.mp3");
+const agopunturaSound = new Audio("assets/audio/agopuntura.mp3");
+const diapasonSound = new Audio("assets/audio/diapason.wav");
+const clickHoldSound = new Audio("assets/audio/clickprolungato.wav");
+const vibranteSound = new Audio("assets/audio/toccovibrante.mp3");
+const achievementSound = new Audio("assets/audio/obiettivo.wav");
+const bluePowerupSound = new Audio("assets/audio/powerupblu.wav");
+const crystalPowerupSound = new Audio("assets/audio/powerupcristallo.wav");
+const purplePowerupSound = new Audio("assets/audio/powerupviola.wav");
+const greenPowerupSound = new Audio("assets/audio/powerupverde.wav");
+const drain2MSound = new Audio("assets/audio/drenaggio2m.wav");
+const drainUpgradeSound = new Audio("assets/audio/drenaggio.wav");
+const magicGlowSound = new Audio("assets/audio/magicglow.wav");
+const greenClickSound = new Audio("assets/audio/powerupverde.mp3");
+const brainStageTwoAppearSound = new Audio("assets/audio/brain2appare.wav");
+const outroSound = new Audio("assets/audio/outro.mp3");
+const blockedSound = new Audio("assets/audio/blocked.wav");
+const consoleTypingSound = new Audio("assets/audio/consoletyping.wav");
 let consoleSoundPlayed = false;
-const consoleStartSound = new Audio("./accensioneconsole.wav");
+const consoleStartSound = new Audio("assets/audio/accensioneconsole.wav");
 let musicaPartita = false;
 let isMuted = false;
 let activeVibranteSounds = [];
@@ -3786,9 +3786,9 @@ const futureBranchConfigs = [
   { nodeId: "f2", anchorId: "s2", parentUpgradeId: "cortex", prerequisiteNodeId: "f3", startThreshold: 22000, completeThreshold: 32000, seed: 1.8 }
 ];
 
-const DORMANT_BRAIN_SRC = "brain0.png";
-const AWAKENED_BRAIN_SRC = "brain1.png";
-const POTENTIAL_BRAIN_SRC = "brain2.png";
+const DORMANT_BRAIN_SRC = "assets/img/brain0.png";
+const AWAKENED_BRAIN_SRC = "assets/img/brain1.png";
+const POTENTIAL_BRAIN_SRC = "assets/img/brain2.png";
 
 function cloneState(value) {
   return JSON.parse(JSON.stringify(value));
@@ -3908,7 +3908,7 @@ function inferConsolePhaseFromLegacyFlags(state) {
 }
 
 function playMoreSpacePumpSound() {
-  const sound = new Audio("./pompaelettromagnetica.wav");
+  const sound = new Audio("assets/audio/pompaelettromagnetica.wav");
   sound.volume = 0.75;
   sound.play().catch(() => {});
 }
@@ -5039,7 +5039,7 @@ function showSeaVisualizationImage(delayMs = 4000) {
     }
 
     game.seaImageShown = true;
-    showConsoleImage("./mare.png", "Visualizzazione del mare");
+    showConsoleImage("assets/img/mare.png", "Visualizzazione del mare");
     queueSave();
 
     seaImageTimer = scaledTimeout(() => {
@@ -5176,7 +5176,7 @@ function resumePostContactNarrativeSequence() {
   }
 
   if (game.seaImageShown && !game.seaImageCompleted) {
-    showConsoleImage("./mare.png", "Visualizzazione del mare");
+    showConsoleImage("assets/img/mare.png", "Visualizzazione del mare");
     clearSeaImageTimer();
     seaImageTimer = scaledTimeout(() => {
       completeSeaImageSequence();
@@ -6016,7 +6016,7 @@ function toggleAchievementsPanel(forceOpen) {
 function prepareIntroMusic() {
   if (introMusic) return;
 
-  introMusic = new Audio("./musicaintro.mp3");
+  introMusic = new Audio("assets/audio/musicaintro.mp3");
   introMusic.loop = true;
   introMusic.volume = 0.6;
   introMusic.preload = "auto";
@@ -6274,7 +6274,7 @@ function playAchievementSound() {
 }
 
 function playCoinSound() {
-  const sound = new Audio("coin.wav");
+  const sound = new Audio("assets/audio/coin.wav");
   sound.volume = 0.6;
   sound.play().catch(() => {});
 }
